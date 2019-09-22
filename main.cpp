@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "Plot.h"
 
-//tst commit
+//test 2  commit
 
 
 int main(void){
