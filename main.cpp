@@ -7,7 +7,7 @@
 
 int main(void){
 
-
+	//test commit with git kraken
 
     std::vector<Vertex> trajectory;
     std::string path = "/home/alessandro/workspace/Plot/CartesianTrajectory.csv";
