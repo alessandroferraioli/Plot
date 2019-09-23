@@ -15,29 +15,31 @@
 bool freeze = false;
 
 //rotation angles and zoom factor for 3D rendering
-GLfloat alpha=210.0f, beta=-70.0f, zoom=2.0f;
+GLfloat alpha=210.0f, beta=-70.0f, zoom=10.0f;
 GLboolean locked = GL_FALSE;
 
 int cursorX = 0;
 int cursorY = 0;
 
 
-//Support' functions
 
 
+
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::drawPoint(Vertex v, GLfloat size){
 
     glPointSize(size);
     glBegin(GL_POINTS);
-    glColor4f(v.r, v.g, v.b, v.a);
+    glColor4f(v.color.r, v.color.g, v.color.b, v.color.a);
     glVertex3f(v.x, v.y, v.z);
     //printf("x: %f , y :%f , z:%f\n",v.x,v.y,v.z);
     glEnd();
-
 }
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//Just used in the tests
+/*
 void drawPoints(  GLfloat size){
 
     float box_size = 20.0f;
@@ -47,20 +49,15 @@ void drawPoints(  GLfloat size){
         for(float y=-box_size;y<box_size;y+=step){
             for(float z=-box_size;z<box_size;z+=step){
             Vertex v1 = {x, y, z, 1.0f, 1.0f, 1.0f, 1.0f};
-
             glPointSize(size);
             glBegin(GL_POINTS);
-            glColor4f(v1.r, v1.g, v1.b, v1.a);
+            glColor4f(v1.color.r, v1.g, v1.b, v1.a);
             glVertex3f(v1.x, v1.y, v1.z);
             glEnd();
-
-
             }
         }
     }
-}
-
-
+}*/
 
 //========================================================================
 // Callback function for mouse button events
@@ -103,7 +100,7 @@ void cursor_position_callback(GLFWwindow* window, double x, double y)
 //========================================================================
 void scroll_callback(GLFWwindow* window, double x, double y)
 {
-    zoom += (float) y / 4.0f;
+    zoom += (float) y / 2.0f;
     if (zoom < 0.0f)
         zoom = 0.0f;
 }
@@ -114,8 +111,8 @@ void scroll_callback(GLFWwindow* window, double x, double y)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     const double DEG2RAD = 3.14159265 / 180;
-    const float fovY = 45.0f;
-    const float front = 0.1f;
+    const float fovY = 50.0f;
+    const float front = 1.0f;
     const float back = 128.0f;
     float ratio = 1.0f;
     if (height > 0)
@@ -139,33 +136,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     //Alternative: gluPerspective will provide the same solution as above
     //gluPerspective(fovY, ratio, front, back);
 }
-//+++++++++++++++++++++++++++++++++++++++++++++++++++
-void drawOrigin(int width, int height){
-    float transparency = 1.0f;
-    glLineWidth(1.0f);
-    glBegin(GL_LINES);
-    //draw a red line for the x-axis
-    glColor4f(1.0f, 0.0f, 0.0f, transparency);
-    glVertex3f(0.0f, 0.0f, 0.0f);
-    glColor4f(1.0f, 0.0f, 0.0f, transparency);
-    glVertex3f(width, 0.0f, 0.0f);
-
-    //draw a green line for the y-axis
-    glColor4f(0.0f, 1.0f, 0.0f, transparency);
-    glVertex3f(0.0f, 0.0f, 0.0f);
-    glColor4f(0.0f, 1.0f, 0.0f, transparency);
-    glVertex3f(0.0f, 0.0f, height);
-
-    //draw a blue line for the z-axis
-    glColor4f(0.0f, 0.0f, 1.0f, transparency);
-    glVertex3f(0.0f, 0.0f, 0.0f);
-    glColor4f(0.0f, 0.0f, 1.0f, transparency);
-    glVertex3f(0.0f, 10, 0.0f);
-    glEnd();
-}
 
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//The rescale' functions are not used at moment
 
 float rescale(float value,float range, float max, float min){
     float new_value;
@@ -176,27 +150,33 @@ float rescale(float value,float range, float max, float min){
 
 return new_value;
 }
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 std::vector<Vertex> rescaleTrajectory(	std::vector<Vertex> trajectory,
 										float max_x,float min_x,float max_y,
 										float min_y,float max_z,float min_z){
-	float range = 1.0f;
+	float range = 2.0f;
+	float max_rescale = std::max(std::max(max_x,max_y),max_z);
+	float min_rescale = std::min(std::min(min_x,min_y),min_z);
+
 	std::vector<Vertex> rescaled_trajectory = trajectory;
     for (unsigned i=0; i<trajectory.size(); i++){
-    	rescaled_trajectory.at(i).x = rescale(trajectory.at(i).x,range,max_x,min_x);
-    	rescaled_trajectory.at(i).y = rescale(trajectory.at(i).y,range,max_y,min_z);
-    	rescaled_trajectory.at(i).z = rescale(trajectory.at(i).z,range,max_z,min_y);
+    	rescaled_trajectory.at(i).x = rescale(trajectory.at(i).x,range,max_rescale,min_rescale);
+    	rescaled_trajectory.at(i).y = rescale(trajectory.at(i).y,range,max_rescale,min_rescale);
+    	rescaled_trajectory.at(i).z = rescale(trajectory.at(i).z,range,max_rescale,min_rescale);
     }
 	return rescaled_trajectory;
 }
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-std::vector<Vertex> Plot::readCSV(std::string PathFile){
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+std::vector<Vertex> Plot::readCSV(std::string PathFile,float *max_value){
 
 	std::vector<Vertex> trajectory;
-    Vertex v {0,0,0,1.0f,1.0f,1.0f,1.0f};
+	Color start_color{1.0f,1.0f,1.0f,1.0f};
+    Vertex v;
+    v.x = 0;
+    v.y = 0;
+    v.z = 0;
+    v.color = start_color;
     float max_x = 0;
     float max_y = 0;
     float max_z = 0;
@@ -205,10 +185,11 @@ std::vector<Vertex> Plot::readCSV(std::string PathFile){
     float min_y = 0;
     float min_z = 0;
 
+    float start_x,start_y,start_z;
 
     std::ifstream file(PathFile);
     std::string line;
-    int index = 0;
+    bool first_measure = true;
 
     while (getline( file, line ))                   // read a whole line of the file
     {
@@ -218,83 +199,122 @@ std::vector<Vertex> Plot::readCSV(std::string PathFile){
      int counter = 0;// 0 time, 1 x, 2 y, 3 z
       while ( getline( ss, data, ',' ) )           // read (string) items up to a comma
       {
-
-            if(counter==1){
-                v.x =(GLfloat)std::stof(data);
+    	  if(counter==1){
+                if(first_measure)
+                		start_x = std::stof(data);
+                v.x =(GLfloat)std::stof(data) - start_x;
                 if(v.x>max_x)
                     max_x = v.x;
                 if(v.x<min_x)
                     min_x = v.x;
             }
             if(counter==2){
-                v.y = (GLfloat)std::stof(data);
+                if(first_measure)
+                		start_y = std::stof(data);
+                v.y = (GLfloat)std::stof(data)-start_y;
                 if(v.y>max_y)
                     max_y = v.y;
                 if(v.y<min_y)
                     min_y = v.y;
             }
             if(counter==3){
-                v.z = (GLfloat)std::stof(data);
+                if(first_measure)
+                		start_z = std::stof(data);
+                v.z = (GLfloat)std::stof(data)-start_z;
                 if(v.z>max_z)
                     max_z = v.z;
                 if(v.z<min_z)
                     min_z = v.z;
             }
         counter++;
-     // }
       }
-      //printf("x: %f | y :%f | z:%f\n",v.x,v.y,v.z);
+     printf("x: %f | y :%f | z:%f\n",v.x,v.y,v.z);
       trajectory.push_back(v);
-      index ++;
-
+      first_measure = false;
    }
 
-   return trajectory;
+    *max_value = std::max(std::max(max_x,max_y),max_z);
+    return trajectory;
 	//return rescaleTrajectory(trajectory,max_x,min_x,max_y,min_y,max_z,min_z);
 }
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//The color goes from red to green as the time goes to the end
+Color getColor(int index, int size){
+	Color color{1.0f,0.0f,0.0f,1.0f};
+	color.r = (1.0f - (float)index/size);
+	color.g = (float)index/size;
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::drawPlot(std::vector<Vertex> trajectory,GLfloat size){
-	Vertex v;
-    for (unsigned i=0; i<trajectory.size(); i++){
-    	printf("x: %f , y :%f , z:%f\n",trajectory.at(i).x,trajectory.at(i).y,trajectory.at(i).z);
-    	v = trajectory.at(i);
-        glPointSize(size);
-        glBegin(GL_POINTS);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        glVertex3f(v.x, v.y, v.z);
-        //printf("x: %f , y :%f , z:%f\n",v.x,v.y,v.z);
-        glEnd();
+	return color;
+
+}
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//The floor behaves on the x-z plane
+void drawFloor(float max_value){
+	float lineWidth = 1.0f;
 
 
-    	//drawPoint(trajectory.at(i),size);
-    }
+	for(int x =-max_value ; x<max_value ; x++){
+			glLineWidth(lineWidth);
+			glBegin(GL_LINES);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			glVertex3f(x, -max_value, 1.0f);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			glVertex3f(x, max_value, 0.0f);
+			glEnd();
+
+	}
+
+	for(int y =-max_value ; y<max_value ; y++){
+			glLineWidth(lineWidth);
+			glBegin(GL_LINES);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			glVertex3f(-max_value, y, 1.0f);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			glVertex3f(max_value, y, 0.0f);
+			glEnd();
+
+	}
+
+
+
+
 
 }
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Plot::Plot (Window_params params,std::string path){
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void drawOrigin(float max_value){
+	float transparency = 0.5f;
+	int factor = 1.3;
+	float lineWidth = 8.0f;
+	max_value = factor * max_value;
 
-	GLFWwindow* window;
-	// Window size
-	const int WINDOWS_WIDTH = params.width;
-	const int WINDOWS_HEIGHT = params.height;
+	glLineWidth(lineWidth);
+	glBegin(GL_LINES);
+	//draw a red line for the x-axis
+	glColor4f(1.0f, 0.0f, 0.0f, transparency);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glColor4f(1.0f, 0.0f, 0.0f, transparency);
+	glVertex3f(max_value, 0.0f, 0.0f);
 
-	std::vector<Vertex> trajectory = readCSV(path);
-	GLfloat size = 5.0f;
+	//draw a green line for the y-axis
+	glColor4f(0.0f, 1.0f, 0.0f, transparency);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glColor4f(0.0f, 1.0f, 0.0f, transparency);
+	glVertex3f(0.0f, 0.0f, max_value);
+
+	//draw a blue line for the z-axis
+	glColor4f(0.0f, 0.0f, 1.0f, transparency);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	glColor4f(0.0f, 0.0f, 1.0f, transparency);
+	glVertex3f(0.0f, max_value, 0.0f);
+	glEnd();
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Plot::drawPlot(std::vector<Vertex> trajectory,GLfloat size,float max_value){
 
 
-
-
-    if (!glfwInit()){
-        exit(EXIT_FAILURE);
-    }
-
-    window = glfwCreateWindow(WINDOWS_WIDTH, WINDOWS_HEIGHT,"Plot", NULL, NULL);
-    if (!window){
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+    //initialize the callbacks for event handling
 
     //framebuffer size callback - i.e., window resizing
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -309,16 +329,14 @@ Plot::Plot (Window_params params,std::string path){
     glfwSwapInterval(1);
 
     //get the frame buffer (window) size
-    //int width, height;
-    glfwGetFramebufferSize(window, &params.width, &params.height);
-
-
+    glfwGetFramebufferSize(window, &window_params.width, &window_params.height);
     //initial call to the framebuffer callback, and initialize the OpenGL
     //camera and other properties there
-    framebuffer_size_callback(window, params.width, params.height);
+    framebuffer_size_callback(window, window_params.width, window_params.height);
 
 
-    //enable anti-aliasing
+
+    //enabling a lot of stuff
     glEnable(GL_BLEND);
     //smooth the points
     glEnable(GL_LINE_SMOOTH);
@@ -326,20 +344,19 @@ Plot::Plot (Window_params params,std::string path){
     glEnable(GL_POINT_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-    //needed for alpha blendin
+    //needed for alpha blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_ALPHA_TEST) ;
 
 
-    //initialize all parameters
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         //draw the scene
 
 
-        //switch to modelview so the transformation applies to entire model
+        //switch to modelview so the tranformation applies to entire model
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         //move the object back and forth based on the zoom level
@@ -348,20 +365,45 @@ Plot::Plot (Window_params params,std::string path){
         glRotatef(beta, 1.0, 0.0, 0.0);
         // rotate alpha degrees around the z-axis
         glRotatef(alpha, 0.0, 0.0, 1.0);
+		drawFloor(max_value);
 
-        //draw the origin with the x,y,z axes for visualization
+		drawOrigin(max_value);
 
-        drawPlot(trajectory,size);
-        //drawPoints(size);
+        //Plotting the dataset
+        for (unsigned i=0; i<trajectory.size(); i++){
+        	//trajectory.at(i).color = getColor(i,trajectory.size());
+        	printf("x: %f , y :%f , z:%f\n",trajectory.at(i).x,trajectory.at(i).y,trajectory.at(i).z);
+        	drawPoint(trajectory.at(i),size);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
     glfwDestroyWindow(window);
-
     glfwTerminate();
 
+}
 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Plot::Plot (int width,int height){
 
+	Window_params window_params{width,height};
+
+	// Window size
+	const int WINDOWS_WIDTH = window_params.width;
+	const int WINDOWS_HEIGHT = window_params.height;
+
+	//Initialize the window
+    if (!glfwInit()){
+    	printf("Error on the glfwInit()\n");
+        exit(EXIT_FAILURE);
+    }
+
+    window = glfwCreateWindow(WINDOWS_WIDTH, WINDOWS_HEIGHT, "Plot", NULL, NULL);
+    if (!window){
+        glfwTerminate();
+    	printf("Cannot initialize the window\n");
+        exit(EXIT_FAILURE);
+    }
 
 }

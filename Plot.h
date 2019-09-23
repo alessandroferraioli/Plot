@@ -14,12 +14,14 @@
 
 #define _USE_MATH_DEFINES // M_PI constant
 
-
+typedef struct{
+    GLfloat r, g, b, a;
+}Color;
 
 
 typedef struct{
     GLfloat x, y, z;
-    GLfloat r, g, b, a;
+    Color color;
 }Vertex;
 
 typedef struct{
@@ -31,18 +33,20 @@ typedef struct{
 class Plot{
 
 public:
-    Plot(Window_params window,std::string path);
+    Plot(int width, int height);
 
-    void drawPlot(std::vector<Vertex>,GLfloat);
-    std::vector<Vertex> readCSV(std::string);
+    void drawPlot(std::vector<Vertex> trajectory,GLfloat point_size,float max_value);
+    std::vector<Vertex> readCSV(std::string,float* max_value);
 
-    Vertex vertex;
-    Window_params window;
+    GLFWwindow* window;
+    Window_params window_params;
 
 
 
 private:
+
     void drawPoint(Vertex ,GLfloat );
+
 };
 
 

@@ -2,21 +2,22 @@
 #include <stdio.h>
 #include "Plot.h"
 
-//test 2  commit
+
 
 
 int main(void){
 
-	Window_params params{1280,720};
+
+
     std::vector<Vertex> trajectory;
-    std::string path = "CartesianTrajectory.csv";
+    std::string path = "/home/alessandro/workspace/Plot/CartesianTrajectory.csv";
+    GLfloat size = 5.0f;
+    float max_value;
 
 
-    GLfloat size= 5;
-
-	Plot plot(params,path);
-   // trajectory = plot.readCSV(path);
-    //plot.drawPlot(trajectory,size);
+	Plot plot(1280,720);
+	trajectory = plot.readCSV(path,&max_value);
+	plot.drawPlot(trajectory,size,max_value);
 
     exit(EXIT_SUCCESS);
 
