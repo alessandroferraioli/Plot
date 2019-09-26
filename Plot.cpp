@@ -1,41 +1,21 @@
 #include "Plot.h"
-#include <thread>
 
-#include <mutex>
 
 using namespace json11;
 
-//freeze the animation
-bool freeze = false;
 
-//rotation angles and zoom factor for 3D rendering
-GLfloat alpha=210.0f, beta=-70.0f, zoom=10.0f;
-GLboolean locked = GL_FALSE;
-
-int cursorX = 0;
-int cursorY = 0;
-
-
-
-std::mutex mtx;
-//Trajectory trajectory;
-
-
-
-
-void
-fatal(const char *func, int rv)
+void fatal(const char *func, int rv)
 {
         fprintf(stderr, "%s: %s\n", func, nng_strerror(rv));
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::drawPoint(Vertex v, GLfloat size){
+void Plot::drawPoint(Point p,Color color, GLfloat size){
 
     glPointSize(size);
     glBegin(GL_POINTS);
-    glColor4f(v.color.r, v.color.g, v.color.b, v.color.a);
-    glVertex3f(v.point.x, v.point.y, v.point.z);
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex3f(p.x,p.y, p.z);
     //printf("x: %f , y :%f , z:%f\n",v.x,v.y,v.z);
     glEnd();
 }
@@ -53,33 +33,13 @@ void Plot::drawLine(Vertex start,Vertex end,float lineWidth){
 
 }
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//Just used in the tests
-/*
-void drawPoints(  GLfloat size){
-
-    float box_size = 20.0f;
-    float step = 1.0f;
-
-    for(float x=-box_size;x<box_size;x+=step){
-        for(float y=-box_size;y<box_size;y+=step){
-            for(float z=-box_size;z<box_size;z+=step){
-            Vertex v1 = {x, y, z, 1.0f, 1.0f, 1.0f, 1.0f};
-            glPointSize(size);
-            glBegin(GL_POINTS);
-            glColor4f(v1.color.r, v1.g, v1.b, v1.a);
-            glVertex3f(v1.x, v1.y, v1.z);
-            glEnd();
-            }
-        }
-    }
-}*/
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 //========================================================================
 // Callback function for mouse button events
 //========================================================================
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int mods,Plot instance)
 {
     if (button != GLFW_MOUSE_BUTTON_LEFT)
         return;
@@ -87,11 +47,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     if (action == GLFW_PRESS)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        locked = GL_TRUE;
+        instance.locked = GL_TRUE;
     }
     else
     {
-        locked = GL_FALSE;
+    	instance.locked = GL_FALSE;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }
@@ -99,27 +59,27 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 //========================================================================
 // Callback function for cursor motion events
 //========================================================================
-void cursor_position_callback(GLFWwindow* window, double x, double y)
+void Plot::cursor_position_callback(GLFWwindow* window, double x, double y,Plot instance)
 {
     //if the mouse button is pressed
-    if (locked)
+    if (instance.locked)
     {
-        alpha += (GLfloat) (x - cursorX) / 10.0f;
-        beta += (GLfloat) (y - cursorY) / 10.0f;
+    	instance.alpha += (GLfloat) (x - instance.cursorX) / 10.0f;
+    	instance.beta += (GLfloat) (y - instance.cursorY) / 10.0f;
     }
     //update the cursor position
-    cursorX = (int) x;
-    cursorY = (int) y;
+    instance.cursorX = (int) x;
+    instance.cursorY = (int) y;
 }
 
 //========================================================================
 // Callback function for scroll events
 //========================================================================
-void scroll_callback(GLFWwindow* window, double x, double y)
+void Plot::scroll_callback(GLFWwindow* window, double x, double y,Plot instance)
 {
-    zoom += (float) y / 2.0f;
-    if (zoom < 0.0f)
-        zoom = 0.0f;
+	instance.zoom += (float) y / 2.0f;
+    if (instance.zoom < 0.0f)
+    	instance.zoom = 0.0f;
 }
 
 //========================================================================
@@ -185,15 +145,14 @@ std::vector<Vertex> rescaleTrajectory(	std::vector<Vertex> trajectory,
 	return rescaled_trajectory;
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-std::vector<Vertex> Plot::readCSV(std::string PathFile,float *max_value){
+Points Plot::readCSV(std::string PathFile,float *max_value){
 
-	std::vector<Vertex> trajectory;
-	Color start_color{1.0f,1.0f,1.0f,1.0f};
-    Vertex v;
-    v.point.x = 0;
-    v.point.y = 0;
-    v.point.z = 0;
-    v.color = start_color;
+	Points trajectory;
+    Point p;
+    p.x = 0;
+    p.y = 0;
+    p.z = 0;
+
     float max_x = 0;
     float max_y = 0;
     float max_z = 0;
@@ -219,34 +178,34 @@ std::vector<Vertex> Plot::readCSV(std::string PathFile,float *max_value){
     	  if(counter==1){
                 if(first_measure)
                 		start_x = std::stof(data);
-                v.point.x =(GLfloat)std::stof(data) - start_x;
-                if(v.point.x>max_x)
-                    max_x = v.point.x;
-                if(v.point.x<min_x)
-                    min_x = v.point.x;
+                p.x =(GLfloat)std::stof(data) - start_x;
+                if(p.x>max_x)
+                    max_x = p.x;
+                if(p.x<min_x)
+                    min_x = p.x;
             }
             if(counter==2){
                 if(first_measure)
                 		start_y = std::stof(data);
-                v.point.y = (GLfloat)std::stof(data)-start_y;
-                if(v.point.y>max_y)
-                    max_y = v.point.y;
-                if(v.point.y<min_y)
-                    min_y = v.point.y;
+               p.y = (GLfloat)std::stof(data)-start_y;
+                if(p.y>max_y)
+                    max_y = p.y;
+                if(p.y<min_y)
+                    min_y = p.y;
             }
             if(counter==3){
                 if(first_measure)
                 		start_z = std::stof(data);
-                v.point.z = (GLfloat)std::stof(data)-start_z;
-                if(v.point.z>max_z)
-                    max_z = v.point.z;
-                if(v.point.z<min_z)
-                    min_z = v.point.z;
+                p.z = (GLfloat)std::stof(data)-start_z;
+                if(p.z>max_z)
+                    max_z = p.z;
+                if(p.z<min_z)
+                    min_z = p.z;
             }
         counter++;
       }
-     printf("x: %f | y :%f | z:%f\n",v.point.x,v.point.y,v.point.z);
-      trajectory.push_back(v);
+     printf("x: %f | y :%f | z:%f\n",p.x,p.y,p.z);
+      trajectory.push_back(p);
       first_measure = false;
    }
     	if(*max_value < std::max(std::max(max_x,max_y),max_z))
@@ -332,12 +291,12 @@ void Plot::waitConnection(const char* url){
       printf("Connection is correctly set\n");
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Vertex Plot::readMsg(){
+Point Plot::readMsg(){
 
     char *buf;
     size_t sz;
 
-    Vertex new_vertex;
+    Point new_point;
 
 
     if ((rv = nng_recv(sock, &buf, &sz, NNG_FLAG_ALLOC)) != 0) {
@@ -350,83 +309,91 @@ Vertex Plot::readMsg(){
     if (json.is_object())
     {
             Json::object itemMap = json.object_items();
-            new_vertex.point.x = itemMap["x"].number_value();
-            new_vertex.point.y = itemMap["y"].number_value();
-            new_vertex.point.z = itemMap["z"].number_value();
+            new_point.x = itemMap["x"].number_value();
+            new_point.y = itemMap["y"].number_value();
+            new_point.z = itemMap["z"].number_value();
     }
 
-    Color new_vertexColor{0.0f,1.0f,0.0f,1.0f};
-    new_vertex.color = new_vertexColor;
 	//printf("Got the message x: %f, y: %f, z: %f\n",new_vertex.point.x,new_vertex.point.y,new_vertex.point.z);
 
     nng_free(buf, sz);
 
-    return new_vertex;
+    return new_point;
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::getMessage(Trajectory* trajectory){
 	printf("Started thread GetMessage \n");
+	//TODO: Evita loop infiniti. Chi lo interrompe questo?
 	for(;;){
-		Vertex new_vertex = readMsg();
-		mtx.lock();
-		trajectory->push_back(new_vertex);
+		Point new_point = readMsg();
+
+	    std::lock_guard<std::mutex> lock(mtx);
+	    trajectory->points.push_back(new_point);
 		//printf("Added new vertex x: %f, y: %f, z: %f\n",new_vertex.point.x,new_vertex.point.y,new_vertex.point.z);
-		mtx.unlock();
+		//mtx.unlock();
 		//usleep(100);
 	}
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+void Plot::InitializeWindowSettings(){
+
+			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+			//mouse button callback
+			glfwSetMouseButtonCallback(window, &Plot::mouse_button_callback,this);
+
+			//mouse movement callback
+			glfwSetCursorPosCallback(window, &Plot::cursor_position_callback,this);
+
+			//mouse scroll callback
+			glfwSetScrollCallback(window,&Plot::scroll_callback,this);
+
+			glfwMakeContextCurrent(window);
+			glfwSwapInterval(1);
+
+			//get the frame buffer (window) size
+			glfwGetFramebufferSize(window, &window_params.width, &window_params.height);
+
+			//initial call to the frame buffer callback, and initialize the OpenGL
+			//camera and other properties there
+			framebuffer_size_callback(window, window_params.width, window_params.height);
+
+			//enabling a lot of stuff
+			glEnable(GL_BLEND);
+
+			//smooth the points
+			glEnable(GL_LINE_SMOOTH);
+
+			//smooth the lines
+			glEnable(GL_POINT_SMOOTH);
+
+			glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+			glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+
+			//needed for alpha blending
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			glEnable(GL_ALPHA_TEST) ;
+
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Color background){
 	   //initialize the call backs for event handling
 
 		printf("Started thread nngPlot \n");
-
-		//Trajectory copy_trajectory;
-
-
-	    //frame buffer size callback - i.e., window resizing
-	    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	    //mouse button callback
-	    glfwSetMouseButtonCallback(window, mouse_button_callback);
-	    //mouse movement callback
-	    glfwSetCursorPosCallback(window, cursor_position_callback);
-	    //mouse scroll callback
-	    glfwSetScrollCallback(window, scroll_callback);
-
-	    glfwMakeContextCurrent(window);
-	    glfwSwapInterval(1);
-
-	    //get the frame buffer (window) size
-	    glfwGetFramebufferSize(window, &window_params.width, &window_params.height);
-	    //initial call to the frame buffer callback, and initialize the OpenGL
-	    //camera and other properties there
-	    framebuffer_size_callback(window, window_params.width, window_params.height);
+		InitializeWindowSettings();
 
 
-
-	    //enabling a lot of stuff
-	    glEnable(GL_BLEND);
-	    //smooth the points
-	    glEnable(GL_LINE_SMOOTH);
-	    //smooth the lines
-	    glEnable(GL_POINT_SMOOTH);
-	    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	    glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-	    //needed for alpha blending
-	    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	    glEnable(GL_ALPHA_TEST) ;
-
-
-	    while (!glfwWindowShouldClose(window))
+		while (!glfwWindowShouldClose(window))
 	    {
-
 	        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	        glClearColor(background.r, background.g, background.b, background.a);
 	        //draw the scene
-
 
 	        //switch to model view so the transformation applies to entire model
 	        glMatrixMode(GL_MODELVIEW);
@@ -441,99 +408,53 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Co
 
 			drawOrigin(30.0f,axisWidth);
 
-
-		//	if(mtx.try_lock()==-1){
+    		//	if(mtx.try_lock()==-1){
 			//	printf("Got the lock on the trajectory, Updating the trajectory plotted\n");
 			//	copy_trajectory = trajectory;
 				//mtx.unlock();
-
 			//}
 
 	        //Plotting the dataset
 			Trajectory copied_trajectory = *trajectory;
-			printf("Trajectory's size : %d\n",copied_trajectory.size());
-				for (unsigned i=0; i<copied_trajectory.size(); i++){
+			printf("Trajectory's size : %d\n",copied_trajectory.points.size());
+				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 					//trajectory.at(i).color = getColor(i,trajectory.size());
-				//	printf("x: %f , y :%f , z:%f\n",trajectory.at(i).point.x,trajectory.at(i).point.y,trajectory.at(i).point.z);
-					copied_trajectory.at(i).color.r = 0.0f;
-					copied_trajectory.at(i).color.g = 1.0f;
-					copied_trajectory.at(i).color.b = 0.0f;
-					copied_trajectory.at(i).color.a = 1.0f;
+				    //printf("x: %f , y :%f , z:%f\n",trajectory.at(i).point.x,trajectory.at(i).point.y,trajectory.at(i).point.z);
 
-					drawPoint(copied_trajectory.at(i),plotWidth);
+					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,plotWidth);
 				}
-
 
 	        glfwSwapBuffers(window);
 	        glfwPollEvents();
 	    }
 	    glfwDestroyWindow(window);
 	    glfwTerminate();
-
 }
 
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::drawPlotNNG(const char* url,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor){
-	Trajectory trajectory;
+	Trajectory trajectory;      //TODO: v. Heap & stack
 	waitConnection(url);
-	std::thread thrd_getMsg(&Plot::getMessage,this,&trajectory);
+	std::thread thrd_getMsg(&Plot::getMessage,this,&trajectory);    //TODO: Non sarebbe meglio spostarlo fuori dalla classe?
 	std::thread thrd_Plot (&Plot::nngPlot,this,&trajectory,axisWidth,plotWidth, backgroundColor);
-	thrd_Plot.join();
-	thrd_getMsg.join();
-
+	thrd_Plot.join();           //TODO: v. RAII
+	thrd_getMsg.join();         //TODO: v. RAII
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//TODO: metodo non usato?
 void Plot::drawPlot(std::vector<Trajectory> trajectories,GLfloat axisWidth,GLfloat plotWidth,float max_value,
 			Color background, std::vector<Color> colors){
 
-
-    //initialize the call backs for event handling
-
-
-
-    //frame buffer size callback - i.e., window resizing
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    //mouse button callback
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    //mouse movement callback
-    glfwSetCursorPosCallback(window, cursor_position_callback);
-    //mouse scroll callback
-    glfwSetScrollCallback(window, scroll_callback);
-
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-
-    //get the frame buffer (window) size
-    glfwGetFramebufferSize(window, &window_params.width, &window_params.height);
-    //initial call to the frame buffer callback, and initialize the OpenGL
-    //camera and other properties there
-    framebuffer_size_callback(window, window_params.width, window_params.height);
-
-
-
-    //enabling a lot of stuff
-    glEnable(GL_BLEND);
-    //smooth the points
-    glEnable(GL_LINE_SMOOTH);
-    //smooth the lines
-    glEnable(GL_POINT_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-    //needed for alpha blending
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_ALPHA_TEST) ;
-
+	InitializeWindowSettings();
 
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(background.r, background.g, background.b, background.a);
         //draw the scene
-
-
         //switch to model view so the transformation applies to entire model
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -551,14 +472,11 @@ void Plot::drawPlot(std::vector<Trajectory> trajectories,GLfloat axisWidth,GLflo
 		for (unsigned j = 0; j< trajectories.size(); j++){
 			Trajectory trajectory = trajectories.at(j);
 			Color trajColor = colors.at(j);
-			for (unsigned i=0; i<trajectory.size(); i++){
+			for (unsigned i=0; i<trajectory.points.size(); i++){
 				//trajectory.at(i).color = getColor(i,trajectory.size());
-				printf("x: %f , y :%f , z:%f\n",trajectory.at(i).point.x,trajectory.at(i).point.y,trajectory.at(i).point.z);
-				trajectory.at(i).color.r = trajColor.r;
-				trajectory.at(i).color.g = trajColor.g;
-				trajectory.at(i).color.b = trajColor.b;
-
-				drawPoint(trajectory.at(i),plotWidth);
+				printf("x: %f , y :%f , z:%f\n",trajectory.points.at(i).x,trajectory.points.at(i).y,trajectory.points.at(i).z);
+				trajectory.color = trajColor;
+				drawPoint(trajectory.points.at(i),trajectory.color,plotWidth);
 			}
 		}
 
@@ -567,7 +485,6 @@ void Plot::drawPlot(std::vector<Trajectory> trajectories,GLfloat axisWidth,GLflo
     }
     glfwDestroyWindow(window);
     glfwTerminate();
-
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -595,5 +512,10 @@ Plot::Plot (int width,int height){
     if ((rv = nng_sub0_open(&sock)) != 0) {
         fprintf(stderr, "nng_sub0_open: %s\n",  nng_strerror(rv));
     }
+
+    alpha=210.0f;
+    beta=-70.0f;
+    zoom=10.0f;
+    locked=GL_FALSE;
 
 }

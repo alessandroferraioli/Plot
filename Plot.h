@@ -38,10 +38,18 @@ typedef struct{
 
 typedef struct{
 	Point point;
-	Color color{1.0f,1.0f,1.0f,1.0f};
+	Color color{1.0f,1.0f,1.0f,1.0f}; //TODO: Associa il colore alla traiettoria anziché al punto
 }Vertex;
 
-typedef std::vector<Vertex> Trajectory;
+//typedef std::vector<Vertex> Trajectory;
+
+typedef std::vector<Point> Points;
+
+typedef struct{
+	Points points;
+	Color color;
+}Trajectory;
+
 
 
 typedef struct{
@@ -55,43 +63,63 @@ class Plot{
 public:
     Plot(int width, int height);
 
+    ~Plot(){
+    		delete[] window;
+    }
+
     void drawPlot(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
     void drawPlotNNG(const char* url,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor);
-    std::vector<Vertex> readCSV(std::string,float* max_value);
+
+    Points readCSV(std::string,float* max_value);
+
 
     GLFWwindow* window;
     Window_params window_params;
 
-   // nng_socket sock;
-    //int rv;
-
-
 
 private:
 
-    void drawPoint(Vertex ,GLfloat );
+    void drawPoint(Point vp,Color color, GLfloat size);
     void drawFloor(float max_value);
     void drawOrigin(float max_value,GLfloat axisThickness);
     void drawLine(Vertex start,Vertex end,float lineWidth);
 
+    Point readMsg();
+    void getMessage(Trajectory* trajectory);
 
     void waitConnection(const char* url);
     void nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor);
 
-    Vertex readMsg();
-    void getMessage(Trajectory* trajectory);
+    void InitializeWindowSettings();
+
+
+    static void scroll_callback(GLFWwindow* window, double x, double y);
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+    static void cursor_position_callback(GLFWwindow* window, double x, double y);
+
+
 
     nng_socket sock;
-    int rv;
+    int rv{};
 
 
 
+    GLfloat alpha{};
+    GLfloat beta{};
+    GLfloat zoom{};
+
+    GLboolean locked = GL_FALSE;
 
 
+    int cursorX = 0;
+    int cursorY = 0;
+
+    std::mutex mtx;
 
 };
+
 
 
 #endif
