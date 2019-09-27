@@ -4,10 +4,8 @@
 
 using namespace json11;
 
-void fatal(const char *func, int rv)
-{
-        fprintf(stderr, "%s: %s\n", func, nng_strerror(rv));
-}
+
+
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Point NNG_Interface::readMsg(){
@@ -40,31 +38,17 @@ Point NNG_Interface::readMsg(){
     return new_point;
 
 }
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void NNG_Interface::GetTrajectory(Trajectory **trajectory, std::mutex* mtx){
 
-void NNG_Interface::GetMessage(Trajectory** trajectory){
-	Point newPoint;
-	while((newPoint = readMsg()).z != -100){
-
-
-
-
+	while(1){
+		Point new_point = readMsg();
+	    std::lock_guard<std::mutex> lock(*mtx);
+	    (*trajectory)->points.push_back(new_point);
 	}
 
-
-
 }
-
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void NNG_Interface::GetTrajectory(Trajectory** trajectory){
-
-	std::thread thrd_getMsg(&NNG_Interface::GetMessage,this,trajectory);
-
-}
-
-
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void NNG_Interface::waitConnection(){
 
@@ -81,13 +65,11 @@ void NNG_Interface::waitConnection(){
       printf("Connection is correctly set\n");
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-NNG_Interface::NNG_Interface(const char * url,SharedPoint* buffer) {
+NNG_Interface::NNG_Interface(const char * url,Trajectory **trajectory,std::mutex* mtx) {
 	this->url = url;
-	this->buffer = buffer;
 	waitConnection();
-
-
+	std::thread thrd_read_msg(&NNG_Interface::GetTrajectory,this,trajectory,mtx);
+	thrd_read_msg.join();
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

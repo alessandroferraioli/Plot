@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Plot.h"
+#include "NNGInterface.h"
 
 int main(void){
 
@@ -8,6 +9,7 @@ int main(void){
 
 
     Trajectory * shared_trajectory;
+    std::mutex mtx;
 
     GLfloat plotWidth = 5.0f;
     GLfloat axisWidth = 2.0f;
@@ -16,6 +18,7 @@ int main(void){
     Color background{0.5f,0.5f,0.5f,1.0f};
 
     Plot plot(1280,720);
+    NNG_Interface nng_interface(url,&shared_trajectory,&mtx);
 
  /*   std::vector<Trajectory> trajectories;
     Trajectory trajectory_1;
@@ -44,11 +47,11 @@ int main(void){
     trajectories.push_back( trajectory0);
     trajectories.push_back(trajectory1); */
 
-
+    plot.drawPlotNNG(shared_trajectory,axisWidth,plotWidth,background,&mtx);
 
     //plot.drawPlot(trajectories,axisWidth,plotWidth,max_value,background,colors);
 
-    plot.drawPlotNNG(url,axisWidth,plotWidth,background);
+    //plot.drawPlotNNG(url,axisWidth,plotWidth,background);
 
     exit(EXIT_SUCCESS);
 }

@@ -8,22 +8,14 @@
 #define NNGINTERFACE_H_
 
 
-typedef struct{
-	Trajectory *trajectory;
-	int S{};
-	int E{};
-}SharedPoint;
 
 
 class NNG_Interface {
 	public:
-		NNG_Interface(const char * url, SharedPoint*);
+
+		NNG_Interface(const char * url,Trajectory **trajectory,std::mutex* mtx);
 		~NNG_Interface();
-		void GetTrajectory(Trajectory* trajectory);
-
-
 		const char* url;
-		SharedPoint *buffer;
 
 
 	private:
@@ -31,6 +23,7 @@ class NNG_Interface {
 		void waitConnection();
 		void GetMessage(Trajectory **trajectory);
 		Point readMsg();
+		void GetTrajectory(Trajectory **trajectory, std::mutex* mtx);
 
 		nng_socket sock;
 		int rv{};

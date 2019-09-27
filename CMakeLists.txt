@@ -20,6 +20,7 @@ add_definitions("-std=c++17 -Wall -Wextra -pthread")
 add_executable(dronePlot
     main.cpp
     Plot.cpp
+	NNGInterface.cpp
 )
 
 target_link_libraries(dronePlot
@@ -28,4 +29,6 @@ target_link_libraries(dronePlot
     glut
     glfw
     pthread
+    nng
+    json11
 )

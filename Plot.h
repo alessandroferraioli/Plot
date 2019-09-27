@@ -27,6 +27,9 @@
 
 #define _USE_MATH_DEFINES // M_PI constant
 
+
+void fatal(const char *func, int rv);
+
 typedef struct{
     GLfloat r, g, b, a;
 }Color;
@@ -71,7 +74,7 @@ public:
     void drawPlot(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
-    void drawPlotNNG(const char* url,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor);
+    void drawPlotNNG(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor,std::mutex* mtx);
 
     Points readCSV(std::string,float* max_value);
 
@@ -87,11 +90,8 @@ private:
     void drawOrigin(float max_value,GLfloat axisThickness);
     void drawLine(Vertex start,Vertex end,float lineWidth);
 
-    Point readMsg();
-    void getMessage(Trajectory** trajectory);
 
-    void waitConnection(const char* url);
-    void nngPlot(Trajectory** trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor);
+    void nngPlot(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
 
     void InitializeWindowSettings();
 
@@ -104,6 +104,7 @@ private:
 
     nng_socket sock;
     int rv{};
+    unsigned int points_plotted{0};
 
 /*
 

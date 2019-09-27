@@ -16,7 +16,7 @@ GLboolean locked = GL_FALSE;
 int cursorX = 0;
 int cursorY = 0;
 
-std::mutex mtx;
+//std::mutex mtx;
 
 
 void fatal(const char *func, int rv)
@@ -254,10 +254,7 @@ void Plot::drawFloor(float max_value){
 			Vertex start{-max_value,y,0.0f,1.0f,1.0f,1.0f,1.0f};
 			Vertex end{max_value,y,0.0f,1.0f,1.0f,1.0f,1.0f};
 			drawLine(start,end,lineWidth);
-
 	}
-
-
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -290,68 +287,6 @@ void Plot::drawOrigin(float max_value,GLfloat axisWidth){
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-void Plot::waitConnection(const char* url){
-
-
-        // subscribe to everything (empty means all topics)
-        if ((rv = nng_setopt(sock, NNG_OPT_SUB_SUBSCRIBE, "", 0)) != 0) {
-                fatal("nng_setopt", rv);
-        }
-
-        while ((rv = nng_dial(sock, url, NULL, 0)) != 0) {
-        		printf("Waiting for the connection\n");
-                //fatal("nng_dial", rv);
-        }
-      printf("Connection is correctly set\n");
-}
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Point Plot::readMsg(){
-
-    char *buf;
-    size_t sz;
-
-    Point new_point;
-
-
-    if ((rv = nng_recv(sock, &buf, &sz, NNG_FLAG_ALLOC)) != 0) {
-            fatal("nng_recv", rv);
-    }
-
-    std::string err;
-    Json json = Json::parse(buf, err);
-
-    if (json.is_object())
-    {
-            Json::object itemMap = json.object_items();
-            new_point.x = itemMap["x"].number_value();
-            new_point.y = itemMap["y"].number_value();
-            new_point.z = itemMap["z"].number_value();
-    }
-
-	//printf("Got the message x: %f, y: %f, z: %f\n",new_vertex.point.x,new_vertex.point.y,new_vertex.point.z);
-
-    nng_free(buf, sz);
-
-    return new_point;
-
-}
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::getMessage(Trajectory** trajectory){
-	printf("Started thread GetMessage \n");
-	//TODO: Evita loop infiniti. Chi lo interrompe questo?
-	for(;;){
-		Point new_point = readMsg();
-
-	    std::lock_guard<std::mutex> lock(mtx);
-	    (*trajectory)->points.push_back(new_point);
-		//printf("Added new vertex x: %f, y: %f, z: %f\n",new_point.x,new_point.y,new_point.z);
-		//usleep(100);
-	}
-
-}
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 void Plot::InitializeWindowSettings(){
 
 			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -391,15 +326,12 @@ void Plot::InitializeWindowSettings(){
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			glEnable(GL_ALPHA_TEST) ;
-
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-void Plot::nngPlot(Trajectory** trajectory,GLfloat axisWidth,GLfloat plotWidth,Color background){
+void Plot::nngPlot(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color background,std::mutex *mtx){
 	   //initialize the call backs for event handling
 
-		printf("Started thread nngPlot \n");
 		InitializeWindowSettings();
 
 
@@ -422,14 +354,18 @@ void Plot::nngPlot(Trajectory** trajectory,GLfloat axisWidth,GLfloat plotWidth,C
 
 			drawOrigin(30.0f,axisWidth);
 
-    		//	if(mtx.try_lock()==-1){
+			Trajectory copied_trajectory;
+    		if(mtx->try_lock()==-1){
 			//	printf("Got the lock on the trajectory, Updating the trajectory plotted\n");
-			//	copy_trajectory = trajectory;
-				//mtx.unlock();
-			//}
+    			copied_trajectory = trajectory;
+				mtx->unlock();
+			}else{
+
+
+			}
 
 	        //Plotting the dataset
-			Trajectory copied_trajectory = **trajectory;
+			//Trajectory copied_trajectory = trajectory;
 			printf("Trajectory's size : %d\n",copied_trajectory.points.size());
 				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 					//trajectory.at(i).color = getColor(i,trajectory.size());
@@ -447,22 +383,11 @@ void Plot::nngPlot(Trajectory** trajectory,GLfloat axisWidth,GLfloat plotWidth,C
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::drawPlotNNG(const char* url,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor){
-	Trajectory *trajectory = (Trajectory*)new Trajectory;  //TODO: v. Heap & stack
-
-	Color black{0.0f,0.0f,0.0f,1.0f};
-	trajectory->color = black;
-	trajectory->width = plotWidth;
-	Point point{0.0f,0.0f,0.0f};
+void Plot::drawPlotNNG(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx){
 
 
+	std::thread thrd_Plot(&Plot::nngPlot,this,trajectory,axisWidth,plotWidth, backgroundColor,mtx);
 
-	waitConnection(url);
-
-	std::thread thrd_getMsg(&Plot::getMessage,this,&trajectory);    //TODO: Non sarebbe meglio spostarlo fuori dalla classe?
-	std::thread thrd_Plot (&Plot::nngPlot,this,&trajectory,axisWidth,plotWidth, backgroundColor);
-
-	thrd_getMsg.join();         //TODO: v. RAII
 	thrd_Plot.join();           //TODO: v. RAII
 	}
 
