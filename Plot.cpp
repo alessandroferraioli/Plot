@@ -4,6 +4,21 @@
 using namespace json11;
 
 
+
+//TODO REMOVE THIS STUFF
+GLfloat alpha{210.0f};
+GLfloat beta{-70.0f};
+GLfloat zoom{10.0f};
+
+GLboolean locked = GL_FALSE;
+
+
+int cursorX = 0;
+int cursorY = 0;
+
+std::mutex mtx;
+
+
 void fatal(const char *func, int rv)
 {
         fprintf(stderr, "%s: %s\n", func, nng_strerror(rv));
@@ -39,7 +54,7 @@ void Plot::drawLine(Vertex start,Vertex end,float lineWidth){
 //========================================================================
 // Callback function for mouse button events
 //========================================================================
-void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int mods,Plot instance)
+void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button != GLFW_MOUSE_BUTTON_LEFT)
         return;
@@ -47,11 +62,11 @@ void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int
     if (action == GLFW_PRESS)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        instance.locked = GL_TRUE;
+        locked = GL_TRUE;
     }
     else
     {
-    	instance.locked = GL_FALSE;
+    	locked = GL_FALSE;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }
@@ -59,27 +74,27 @@ void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int
 //========================================================================
 // Callback function for cursor motion events
 //========================================================================
-void Plot::cursor_position_callback(GLFWwindow* window, double x, double y,Plot instance)
+void Plot::cursor_position_callback(GLFWwindow* window, double x, double y)
 {
     //if the mouse button is pressed
-    if (instance.locked)
+    if (locked)
     {
-    	instance.alpha += (GLfloat) (x - instance.cursorX) / 10.0f;
-    	instance.beta += (GLfloat) (y - instance.cursorY) / 10.0f;
+    	alpha += (GLfloat) (x - cursorX) / 10.0f;
+    	beta += (GLfloat) (y - cursorY) / 10.0f;
     }
     //update the cursor position
-    instance.cursorX = (int) x;
-    instance.cursorY = (int) y;
+    cursorX = (int) x;
+    cursorY = (int) y;
 }
 
 //========================================================================
 // Callback function for scroll events
 //========================================================================
-void Plot::scroll_callback(GLFWwindow* window, double x, double y,Plot instance)
+void Plot::scroll_callback(GLFWwindow* window, double x, double y)
 {
-	instance.zoom += (float) y / 2.0f;
-    if (instance.zoom < 0.0f)
-    	instance.zoom = 0.0f;
+	zoom += (float) y / 2.0f;
+    if (zoom < 0.0f)
+    	zoom = 0.0f;
 }
 
 //========================================================================
@@ -322,16 +337,15 @@ Point Plot::readMsg(){
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::getMessage(Trajectory* trajectory){
+void Plot::getMessage(Trajectory** trajectory){
 	printf("Started thread GetMessage \n");
 	//TODO: Evita loop infiniti. Chi lo interrompe questo?
 	for(;;){
 		Point new_point = readMsg();
 
 	    std::lock_guard<std::mutex> lock(mtx);
-	    trajectory->points.push_back(new_point);
-		//printf("Added new vertex x: %f, y: %f, z: %f\n",new_vertex.point.x,new_vertex.point.y,new_vertex.point.z);
-		//mtx.unlock();
+	    (*trajectory)->points.push_back(new_point);
+		//printf("Added new vertex x: %f, y: %f, z: %f\n",new_point.x,new_point.y,new_point.z);
 		//usleep(100);
 	}
 
@@ -343,13 +357,13 @@ void Plot::InitializeWindowSettings(){
 			glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 			//mouse button callback
-			glfwSetMouseButtonCallback(window, &Plot::mouse_button_callback,this);
+			glfwSetMouseButtonCallback(window, &Plot::mouse_button_callback);
 
 			//mouse movement callback
-			glfwSetCursorPosCallback(window, &Plot::cursor_position_callback,this);
+			glfwSetCursorPosCallback(window, &Plot::cursor_position_callback);
 
 			//mouse scroll callback
-			glfwSetScrollCallback(window,&Plot::scroll_callback,this);
+			glfwSetScrollCallback(window,&Plot::scroll_callback);
 
 			glfwMakeContextCurrent(window);
 			glfwSwapInterval(1);
@@ -382,7 +396,7 @@ void Plot::InitializeWindowSettings(){
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Color background){
+void Plot::nngPlot(Trajectory** trajectory,GLfloat axisWidth,GLfloat plotWidth,Color background){
 	   //initialize the call backs for event handling
 
 		printf("Started thread nngPlot \n");
@@ -415,13 +429,12 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Co
 			//}
 
 	        //Plotting the dataset
-			Trajectory copied_trajectory = *trajectory;
+			Trajectory copied_trajectory = **trajectory;
 			printf("Trajectory's size : %d\n",copied_trajectory.points.size());
 				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 					//trajectory.at(i).color = getColor(i,trajectory.size());
-				    //printf("x: %f , y :%f , z:%f\n",trajectory.at(i).point.x,trajectory.at(i).point.y,trajectory.at(i).point.z);
-
-					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,plotWidth);
+				    //printf("x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
+					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
 				}
 
 	        glfwSwapBuffers(window);
@@ -435,13 +448,23 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Co
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::drawPlotNNG(const char* url,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor){
-	Trajectory trajectory;      //TODO: v. Heap & stack
+	Trajectory *trajectory = (Trajectory*)new Trajectory;  //TODO: v. Heap & stack
+
+	Color black{0.0f,0.0f,0.0f,1.0f};
+	trajectory->color = black;
+	trajectory->width = plotWidth;
+	Point point{0.0f,0.0f,0.0f};
+
+
+
 	waitConnection(url);
+
 	std::thread thrd_getMsg(&Plot::getMessage,this,&trajectory);    //TODO: Non sarebbe meglio spostarlo fuori dalla classe?
 	std::thread thrd_Plot (&Plot::nngPlot,this,&trajectory,axisWidth,plotWidth, backgroundColor);
-	thrd_Plot.join();           //TODO: v. RAII
+
 	thrd_getMsg.join();         //TODO: v. RAII
-}
+	thrd_Plot.join();           //TODO: v. RAII
+	}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //TODO: metodo non usato?
@@ -513,9 +536,6 @@ Plot::Plot (int width,int height){
         fprintf(stderr, "nng_sub0_open: %s\n",  nng_strerror(rv));
     }
 
-    alpha=210.0f;
-    beta=-70.0f;
-    zoom=10.0f;
-    locked=GL_FALSE;
+
 
 }

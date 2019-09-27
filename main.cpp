@@ -6,7 +6,18 @@ int main(void){
 
     const char* url = "tcp://127.0.0.1:10002";
 
-    std::vector<Trajectory> trajectories;
+
+    Trajectory * shared_trajectory;
+
+    GLfloat plotWidth = 5.0f;
+    GLfloat axisWidth = 2.0f;
+    float max_value = 0.0f; // Used to set the max size of the plot
+
+    Color background{0.5f,0.5f,0.5f,1.0f};
+
+    Plot plot(1280,720);
+
+ /*   std::vector<Trajectory> trajectories;
     Trajectory trajectory_1;
 
     std::string path_0 = "/home/alessandro/workspace/Plot/CartesianTrajectory_0.csv";
@@ -22,13 +33,7 @@ int main(void){
     colors.push_back(trajectoryCol_1);
     colors.push_back(trajectoryCol_2);
 
-    GLfloat plotWidth = 20.0f;
-    GLfloat axisWidth = 2.0f;
-    float max_value = 0.0f; // Used to set the max size of the plot
 
-    Color background{0.5f,0.5f,0.5f,1.0f};
-
-    Plot plot(1280,720);
 
     Trajectory trajectory0;
     trajectory0.points = plot.readCSV(path_0,&max_value);
@@ -37,7 +42,7 @@ int main(void){
     trajectory1.points = plot.readCSV(path_1,&max_value);
 
     trajectories.push_back( trajectory0);
-    trajectories.push_back(trajectory1);
+    trajectories.push_back(trajectory1); */
 
 
 

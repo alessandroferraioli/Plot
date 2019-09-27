@@ -82,9 +82,11 @@ void NNG_Interface::waitConnection(){
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-NNG_Interface::NNG_Interface(const char * url) {
+NNG_Interface::NNG_Interface(const char * url,SharedPoint* buffer) {
 	this->url = url;
+	this->buffer = buffer;
 	waitConnection();
+
 
 
 }

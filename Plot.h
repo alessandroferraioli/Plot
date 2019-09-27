@@ -48,6 +48,7 @@ typedef std::vector<Point> Points;
 typedef struct{
 	Points points;
 	Color color;
+	GLfloat width;
 }Trajectory;
 
 
@@ -87,10 +88,10 @@ private:
     void drawLine(Vertex start,Vertex end,float lineWidth);
 
     Point readMsg();
-    void getMessage(Trajectory* trajectory);
+    void getMessage(Trajectory** trajectory);
 
     void waitConnection(const char* url);
-    void nngPlot(Trajectory* trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor);
+    void nngPlot(Trajectory** trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor);
 
     void InitializeWindowSettings();
 
@@ -104,7 +105,7 @@ private:
     nng_socket sock;
     int rv{};
 
-
+/*
 
     GLfloat alpha{};
     GLfloat beta{};
@@ -116,7 +117,7 @@ private:
     int cursorX = 0;
     int cursorY = 0;
 
-    std::mutex mtx;
+    std::mutex mtx; */
 
 };
 
