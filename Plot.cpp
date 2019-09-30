@@ -329,7 +329,7 @@ void Plot::InitializeWindowSettings(){
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::nngPlot(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color background,std::mutex *mtx){
+void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
 	   //initialize the call backs for event handling
 
 		InitializeWindowSettings();
@@ -355,21 +355,23 @@ void Plot::nngPlot(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Col
 			drawOrigin(30.0f,axisWidth);
 
 			Trajectory copied_trajectory;
-    		if(mtx->try_lock()==-1){
-			//	printf("Got the lock on the trajectory, Updating the trajectory plotted\n");
-    			copied_trajectory = trajectory;
-				mtx->unlock();
-			}else{
+    		//if(mtx->try_lock()==-1){
+    			printf("Got the lock on the trajectory, Updating the trajectory plotted\n");
+    			copied_trajectory = *trajectory;
+			//	mtx->unlock();
+			//}else{
 
 
-			}
+			//}
 
 	        //Plotting the dataset
 			//Trajectory copied_trajectory = trajectory;
 			printf("Trajectory's size : %d\n",copied_trajectory.points.size());
+			copied_trajectory.color = colorPlot;
+			copied_trajectory.width = plotWidth;
 				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 					//trajectory.at(i).color = getColor(i,trajectory.size());
-				    //printf("x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
+				    printf("Plotting x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
 					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
 				}
 
@@ -383,12 +385,13 @@ void Plot::nngPlot(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Col
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::drawPlotNNG(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx){
 
+void Plot::drawPlotNNG(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
 
-	std::thread thrd_Plot(&Plot::nngPlot,this,trajectory,axisWidth,plotWidth, backgroundColor,mtx);
+	//std::thread thrd_Plot(&Plot::nngPlot,this,trajectory,axisWidth,plotWidth, backgroundColor,mtx);
+	nngPlot(trajectory,axisWidth,colorPlot,plotWidth,backgroundColor,mtx);
 
-	thrd_Plot.join();           //TODO: v. RAII
+	//thrd_Plot.join();
 	}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -457,9 +460,6 @@ Plot::Plot (int width,int height){
         exit(EXIT_FAILURE);
     }
 
-    if ((rv = nng_sub0_open(&sock)) != 0) {
-        fprintf(stderr, "nng_sub0_open: %s\n",  nng_strerror(rv));
-    }
 
 
 

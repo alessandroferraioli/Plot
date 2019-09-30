@@ -67,20 +67,23 @@ class Plot{
 public:
     Plot(int width, int height);
 
-    ~Plot(){
-    		delete[] window;
-    }
 
     void drawPlot(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
-    void drawPlotNNG(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor,std::mutex* mtx);
+    void drawPlotNNG(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
 
     Points readCSV(std::string,float* max_value);
 
 
     GLFWwindow* window;
     Window_params window_params;
+
+
+
+    ~Plot(){
+    		delete[] window;
+    };
 
 
 private:
@@ -91,7 +94,7 @@ private:
     void drawLine(Vertex start,Vertex end,float lineWidth);
 
 
-    void nngPlot(Trajectory trajectory,GLfloat axisWidth,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
+    void nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
 
     void InitializeWindowSettings();
 

@@ -45,17 +45,23 @@ void NNG_Interface::GetTrajectory(Trajectory **trajectory, std::mutex* mtx){
 	while(1){
 		Point new_point = readMsg();
 	    std::lock_guard<std::mutex> lock(*mtx);
-	    (*trajectory)->points.push_back(new_point);
+	   (*trajectory)->points.push_back(new_point);
+	    printf("Got the new point x=%f | y=%f | z=%f \n ",new_point.x,new_point.y,new_point.z);
 	}
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void NNG_Interface::waitConnection(){
 
+		if ((rv = nng_sub0_open(&sock)) != 0) {
+        fprintf(stderr, "nng_sub0_open: %s\n",  nng_strerror(rv));
+		}
+
 
         // subscribe to everything (empty means all topics)
-        if ((rv = nng_setopt(sock, NNG_OPT_SUB_SUBSCRIBE, "", 0)) != 0) {
+        while ((rv = nng_setopt(sock, NNG_OPT_SUB_SUBSCRIBE, "", 0)) != 0) {
                 fatal("nng_setopt", rv);
+
         }
 
         while ((rv = nng_dial(sock, url, NULL, 0)) != 0) {
@@ -68,8 +74,9 @@ void NNG_Interface::waitConnection(){
 NNG_Interface::NNG_Interface(const char * url,Trajectory **trajectory,std::mutex* mtx) {
 	this->url = url;
 	waitConnection();
-	std::thread thrd_read_msg(&NNG_Interface::GetTrajectory,this,trajectory,mtx);
-	thrd_read_msg.join();
+	//std::thread thrd_read_msg(&NNG_Interface::GetTrajectory,this,trajectory,mtx);
+	GetTrajectory(trajectory,mtx);
+	//thrd_read_msg.join();
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
