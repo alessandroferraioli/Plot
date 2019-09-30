@@ -1,11 +1,6 @@
-
-
 #include "NNGInterface.h"
 
 using namespace json11;
-
-
-
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Point NNG_Interface::readMsg(){
@@ -31,23 +26,30 @@ Point NNG_Interface::readMsg(){
             new_point.z = itemMap["z"].number_value();
     }
 
-	//printf("Got the message x: %f, y: %f, z: %f\n",new_vertex.point.x,new_vertex.point.y,new_vertex.point.z);
-
     nng_free(buf, sz);
 
     return new_point;
-
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void NNG_Interface::GetTrajectory(Trajectory **trajectory, std::mutex* mtx){
-
-	while(1){
-		Point new_point = readMsg();
-	    std::lock_guard<std::mutex> lock(*mtx);
-	   (*trajectory)->points.push_back(new_point);
-	    printf("Got the new point x=%f | y=%f | z=%f \n ",new_point.x,new_point.y,new_point.z);
+void NNG_Interface::GetTrajectory(Trajectory *trajectory, std::mutex* mtx){
+	Point new_point;
+	while((new_point = readMsg()).z != -100000){
+	   std::lock_guard<std::mutex> lock(*mtx);
+	   if(isFirstPoint){
+		   startPoint = new_point;
+	   }
+	   new_point.x -= startPoint.x;
+	   new_point.y -= startPoint.y;
+	   new_point.z -= startPoint.z;
+	   trajectory->points.push_back(new_point);
+	   isFirstPoint = false;
+	   if(Debug)
+		   printf("Added the new point x=%f | y=%f | z=%f \n to the trajectory ",new_point.x,new_point.y,new_point.z);
 	}
+
+	if(Debug)
+		printf("Finished the receiving of the data, z=-100000 occurred. \n");
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -57,11 +59,9 @@ void NNG_Interface::waitConnection(){
         fprintf(stderr, "nng_sub0_open: %s\n",  nng_strerror(rv));
 		}
 
-
         // subscribe to everything (empty means all topics)
         while ((rv = nng_setopt(sock, NNG_OPT_SUB_SUBSCRIBE, "", 0)) != 0) {
                 fatal("nng_setopt", rv);
-
         }
 
         while ((rv = nng_dial(sock, url, NULL, 0)) != 0) {
@@ -71,15 +71,15 @@ void NNG_Interface::waitConnection(){
       printf("Connection is correctly set\n");
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-NNG_Interface::NNG_Interface(const char * url,Trajectory **trajectory,std::mutex* mtx) {
+NNG_Interface::NNG_Interface(const char * url,Trajectory *trajectory,std::mutex* mtx) {
 	this->url = url;
 	waitConnection();
-	//std::thread thrd_read_msg(&NNG_Interface::GetTrajectory,this,trajectory,mtx);
-	GetTrajectory(trajectory,mtx);
-	//thrd_read_msg.join();
+	thrd_read_msg = std::thread(&NNG_Interface::GetTrajectory,this,trajectory,mtx);
 
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 NNG_Interface::~NNG_Interface() {
+	thrd_read_msg.join();
+
 }
 

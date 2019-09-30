@@ -13,20 +13,27 @@
 class NNG_Interface {
 	public:
 
-		NNG_Interface(const char * url,Trajectory **trajectory,std::mutex* mtx);
+		NNG_Interface(const char * url,Trajectory *trajectory,std::mutex* mtx);
 		~NNG_Interface();
 		const char* url;
+
 
 
 	private:
 
 		void waitConnection();
-		void GetMessage(Trajectory **trajectory);
+		void GetMessage(Trajectory *trajectory);
 		Point readMsg();
-		void GetTrajectory(Trajectory **trajectory, std::mutex* mtx);
+		void GetTrajectory(Trajectory *trajectory, std::mutex* mtx);
+
+		Point startPoint{};
+		bool isFirstPoint = true;
 
 		nng_socket sock;
 		int rv{};
+		std::thread thrd_read_msg;
+		bool Debug = true;
+
 
 
 };

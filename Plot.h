@@ -66,9 +66,9 @@ class Plot{
 
 public:
     Plot(int width, int height);
+    ~Plot();
 
-
-    void drawPlot(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
+    void drawTrajectories(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
     void drawPlotNNG(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
@@ -79,11 +79,6 @@ public:
     GLFWwindow* window;
     Window_params window_params;
 
-
-
-    ~Plot(){
-    		delete[] window;
-    };
 
 
 private:
@@ -104,10 +99,10 @@ private:
     static void cursor_position_callback(GLFWwindow* window, double x, double y);
 
 
-
+    bool Debug = true;
     nng_socket sock;
     int rv{};
-    unsigned int points_plotted{0};
+    std::thread thrd_Plot;
 
 /*
 

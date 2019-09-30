@@ -12,13 +12,12 @@ GLfloat zoom{10.0f};
 
 GLboolean locked = GL_FALSE;
 
-
 int cursorX = 0;
 int cursorY = 0;
 
-//std::mutex mtx;
 
 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void fatal(const char *func, int rv)
 {
         fprintf(stderr, "%s: %s\n", func, nng_strerror(rv));
@@ -237,7 +236,6 @@ Color getColor(int index, int size){
 	color.g = (float)index/size;
 
 	return color;
-
 }
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //The floor behaves on the x-z plane
@@ -285,7 +283,6 @@ void Plot::drawOrigin(float max_value,GLfloat axisWidth){
 	glVertex3f(0.0f, max_value, 0.0f);
 	glEnd();
 }
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::InitializeWindowSettings(){
 
@@ -327,7 +324,6 @@ void Plot::InitializeWindowSettings(){
 
 			glEnable(GL_ALPHA_TEST) ;
 }
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
 	   //initialize the call backs for event handling
@@ -355,48 +351,37 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfl
 			drawOrigin(30.0f,axisWidth);
 
 			Trajectory copied_trajectory;
-    		//if(mtx->try_lock()==-1){
-    			printf("Got the lock on the trajectory, Updating the trajectory plotted\n");
+    		if(mtx->try_lock()){
     			copied_trajectory = *trajectory;
-			//	mtx->unlock();
-			//}else{
-
-
-			//}
+    			mtx->unlock();
+			}
 
 	        //Plotting the dataset
-			//Trajectory copied_trajectory = trajectory;
-			printf("Trajectory's size : %d\n",copied_trajectory.points.size());
 			copied_trajectory.color = colorPlot;
 			copied_trajectory.width = plotWidth;
 				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 					//trajectory.at(i).color = getColor(i,trajectory.size());
-				    printf("Plotting x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
+					if(Debug)
+						//printf("Plotting x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
 					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
 				}
 
 	        glfwSwapBuffers(window);
 	        glfwPollEvents();
 	    }
-	    glfwDestroyWindow(window);
-	    glfwTerminate();
+
 }
-
-
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void Plot::drawPlotNNG(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
-
-	//std::thread thrd_Plot(&Plot::nngPlot,this,trajectory,axisWidth,plotWidth, backgroundColor,mtx);
-	nngPlot(trajectory,axisWidth,colorPlot,plotWidth,backgroundColor,mtx);
-
-	//thrd_Plot.join();
+	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
+	thrd_Plot.join();
 	}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//TODO: metodo non usato?
-void Plot::drawPlot(std::vector<Trajectory> trajectories,GLfloat axisWidth,GLfloat plotWidth,float max_value,
+
+void Plot::drawTrajectories(std::vector<Trajectory> trajectories,GLfloat axisWidth,GLfloat plotWidth,float max_value,
 			Color background, std::vector<Color> colors){
 
 	InitializeWindowSettings();
@@ -461,6 +446,13 @@ Plot::Plot (int width,int height){
     }
 
 
-
-
 }
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Plot::~Plot(){
+	glfwDestroyWindow(window);
+    glfwTerminate();
+
+};
+
+
+
