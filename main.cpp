@@ -9,10 +9,13 @@ int main(void){
 
 	const char* url = "tcp://127.0.0.1:10002";
 
-	Color background{0.5f,0.5f,0.5f,1.0f};
-	Color colorPlotBlack{0.0f,0.0f,0.0f,1.0};
+	Color grey{0.5f,0.5f,0.5f,1.0f};
+	Color black{0.0f,0.0f,0.0f,1.0};
 
-	Trajectory * shared_trajectory = new Trajectory;
+    SmartPtr<Trajectory> shared_trajectory(new Trajectory);
+
+
+	//Trajectory * shared_trajectory = new Trajectory;
 
 	std::mutex mtx;
 
@@ -22,6 +25,10 @@ int main(void){
 
 
     Plot plot(1280,720);
+    NNG_Interface nng_interface(url);
+
+
+
 
  /*   std::vector<Trajectory> trajectories;
     Trajectory trajectory_1;
@@ -48,17 +55,18 @@ int main(void){
     trajectory1.points = plot.readCSV(path_1,&max_value);
 
     trajectories.push_back(trajectory0);
-    trajectories.push_back(trajectory1); */
+    trajectories.push_back(trajectory1);
+
+    plot.drawTrajectories(trajectories,axisWidth,plotWidth,max_value,background,colors);
+
+     */
 
 
-    NNG_Interface nng_interface(url,shared_trajectory,&mtx);
-    plot.drawPlotNNG(shared_trajectory, axisWidth,colorPlotBlack, plotWidth, background,&mtx);
+    nng_interface.GetTrajectory(&shared_trajectory, &mtx);
+    plot.drawPlotNNG(&shared_trajectory,axisWidth,black,plotWidth,grey,&mtx);
+   // plot.thrd_Plot.join();
 
+   // nng_interface.thrd_wait_msg.join();
+   // nng_interface.thrd_read_msg.join();
 
-
-
-    //plot.drawTrajectories(trajectories,axisWidth,plotWidth,max_value,background,colors);
-
-
-    exit(EXIT_SUCCESS);
 }

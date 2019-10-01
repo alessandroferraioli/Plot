@@ -25,6 +25,10 @@
 #include <nng/protocol/pubsub0/pub.h>
 #include <nng/protocol/pubsub0/sub.h>
 
+
+#include "SmartPtr.h"
+
+
 #define _USE_MATH_DEFINES // M_PI constant
 
 
@@ -71,9 +75,10 @@ public:
     void drawTrajectories(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
-    void drawPlotNNG(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
+    void drawPlotNNG(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
 
     Points readCSV(std::string,float* max_value);
+    std::thread thrd_Plot;
 
 
     GLFWwindow* window;
@@ -89,7 +94,7 @@ private:
     void drawLine(Vertex start,Vertex end,float lineWidth);
 
 
-    void nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
+    void nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
 
     void InitializeWindowSettings();
 
@@ -99,10 +104,10 @@ private:
     static void cursor_position_callback(GLFWwindow* window, double x, double y);
 
 
-    bool Debug = true;
+    bool Debug = false;
     nng_socket sock;
     int rv{};
-    std::thread thrd_Plot;
+
 
 /*
 

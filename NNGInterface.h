@@ -8,30 +8,35 @@
 #define NNGINTERFACE_H_
 
 
-
-
 class NNG_Interface {
 	public:
 
-		NNG_Interface(const char * url,Trajectory *trajectory,std::mutex* mtx);
+		NNG_Interface(const char * url);
 		~NNG_Interface();
+		void GetTrajectory(SmartPtr<Trajectory> *trajectory, std::mutex* mtx);
 		const char* url;
-
+		std::thread thrd_read_msg;
+		std::thread thrd_wait_connection;
 
 
 	private:
 
 		void waitConnection();
-		void GetMessage(Trajectory *trajectory);
+		void GetMessage(SmartPtr<Trajectory> trajectory);
 		Point readMsg();
-		void GetTrajectory(Trajectory *trajectory, std::mutex* mtx);
+		void thrdFunctionGetTrajectory(SmartPtr<Trajectory> *trajectory, std::mutex* mtx);
 
-		Point startPoint{};
-		bool isFirstPoint = true;
 
 		nng_socket sock;
 		int rv{};
-		std::thread thrd_read_msg;
+
+
+
+		Point startPoint{};
+		bool isFirstPoint = true;
+		bool ConnectionIsSet = false;
+
+
 		bool Debug = true;
 
 

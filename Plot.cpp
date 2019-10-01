@@ -1,6 +1,5 @@
 #include "Plot.h"
 
-
 using namespace json11;
 
 
@@ -242,13 +241,13 @@ Color getColor(int index, int size){
 void Plot::drawFloor(float max_value){
 	float lineWidth = 1.0f;
 
-	for(GLfloat x =-max_value ; x<max_value ; x++){
+	for(GLfloat x =-max_value ; x<=max_value ; x++){
 			Vertex start{x,-max_value,0.0f,1.0f,1.0f,1.0f,1.0f};
 			Vertex end{x,max_value,0.0f,1.0f,1.0f,1.0f,1.0f};
 			drawLine(start,end,lineWidth);
 	}
 
-	for(GLfloat y =-max_value ; y<max_value ; y++){
+	for(GLfloat y =-max_value ; y<=max_value ; y++){
 			Vertex start{-max_value,y,0.0f,1.0f,1.0f,1.0f,1.0f};
 			Vertex end{max_value,y,0.0f,1.0f,1.0f,1.0f,1.0f};
 			drawLine(start,end,lineWidth);
@@ -325,7 +324,7 @@ void Plot::InitializeWindowSettings(){
 			glEnable(GL_ALPHA_TEST) ;
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
+void Plot::nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
 	   //initialize the call backs for event handling
 
 		InitializeWindowSettings();
@@ -351,10 +350,10 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfl
 			drawOrigin(30.0f,axisWidth);
 
 			Trajectory copied_trajectory;
-    		if(mtx->try_lock()){
-    			copied_trajectory = *trajectory;
-    			mtx->unlock();
-			}
+    		//if(mtx->try_lock()){
+    			copied_trajectory = **trajectory;
+    			//mtx->unlock();
+			//}
 
 	        //Plotting the dataset
 			copied_trajectory.color = colorPlot;
@@ -362,7 +361,7 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfl
 				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 					//trajectory.at(i).color = getColor(i,trajectory.size());
 					if(Debug)
-						//printf("Plotting x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
+						printf("Plotting x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
 					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
 				}
 
@@ -370,14 +369,21 @@ void Plot::nngPlot(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfl
 	        glfwPollEvents();
 	    }
 
+		glfwDestroyWindow(window);
+		glfwTerminate();
+
+
+
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Plot::drawPlotNNG(Trajectory* trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
+void Plot::drawPlotNNG(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
 	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
-	thrd_Plot.join();
-	}
+	//thrd_Plot.join();
+
+
+}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -446,11 +452,17 @@ Plot::Plot (int width,int height){
     }
 
 
+
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Plot::~Plot(){
+	thrd_Plot.join();
+
 	glfwDestroyWindow(window);
-    glfwTerminate();
+	glfwTerminate();
+
+
+
 
 };
 
