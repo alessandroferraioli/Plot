@@ -14,6 +14,9 @@ GLboolean locked = GL_FALSE;
 int cursorX = 0;
 int cursorY = 0;
 
+int Plot::number_threads{};
+
+
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -326,7 +329,7 @@ void Plot::InitializeWindowSettings(){
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void Plot::nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
 	   //initialize the call backs for event handling
-
+		printf("Started the nngPlot thread #%d\n",number_threads);
 		InitializeWindowSettings();
 
 
@@ -379,7 +382,10 @@ void Plot::nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colo
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void Plot::drawPlotNNG(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
-	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
+
+	id_threads.push_back(std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx));
+	++number_threads;
+	//thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
 	//thrd_Plot.join();
 
 
@@ -456,7 +462,9 @@ Plot::Plot (int width,int height){
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Plot::~Plot(){
-	thrd_Plot.join();
+
+	for(unsigned int i=0;i<id_threads.size();i++)
+		id_threads.at(i).join();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

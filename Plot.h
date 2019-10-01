@@ -34,6 +34,7 @@
 
 void fatal(const char *func, int rv);
 
+
 typedef struct{
     GLfloat r, g, b, a;
 }Color;
@@ -78,7 +79,6 @@ public:
     void drawPlotNNG(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
 
     Points readCSV(std::string,float* max_value);
-    std::thread thrd_Plot;
 
 
     GLFWwindow* window;
@@ -109,6 +109,13 @@ private:
     int rv{};
 
 
+    std::vector<std::thread> id_threads;
+    std::thread thrd_Plot;
+
+    static int number_threads;
+
+
+
 /*
 
     GLfloat alpha{};
@@ -128,3 +135,7 @@ private:
 
 
 #endif
+
+
+
+

@@ -8,16 +8,18 @@
 int main(void){
 
 	const char* url = "tcp://127.0.0.1:10002";
+	const char* url2 = "tcp://127.0.0.2:10004";
 
 	Color grey{0.5f,0.5f,0.5f,1.0f};
 	Color black{0.0f,0.0f,0.0f,1.0};
+	Color green{0.0,1.0f,0.0f,1.0f};
 
-    SmartPtr<Trajectory> shared_trajectory(new Trajectory);
-
-
-	//Trajectory * shared_trajectory = new Trajectory;
+   SmartPtr<Trajectory> shared_trajectory(new Trajectory);
+   SmartPtr<Trajectory> shared_trajectory2(new Trajectory);
 
 	std::mutex mtx;
+	std::mutex mtx2;
+
 
 	GLfloat plotWidth = 1.0f;
 	GLfloat axisWidth = 2.0f;
@@ -25,7 +27,9 @@ int main(void){
 
 
     Plot plot(1280,720);
+
     NNG_Interface nng_interface(url);
+    NNG_Interface nng_interface_2(url2);
 
 
 
@@ -62,11 +66,12 @@ int main(void){
      */
 
 
-    nng_interface.GetTrajectory(&shared_trajectory, &mtx);
-    plot.drawPlotNNG(&shared_trajectory,axisWidth,black,plotWidth,grey,&mtx);
-   // plot.thrd_Plot.join();
 
-   // nng_interface.thrd_wait_msg.join();
-   // nng_interface.thrd_read_msg.join();
+    nng_interface.GetTrajectory(&shared_trajectory, &mtx);
+    nng_interface_2.GetTrajectory(&shared_trajectory2, &mtx2);
+
+    plot.drawPlotNNG(&shared_trajectory,axisWidth,black,plotWidth,grey,&mtx);
+    plot.drawPlotNNG(&shared_trajectory2,axisWidth,black,plotWidth,grey,&mtx2);
+
 
 }

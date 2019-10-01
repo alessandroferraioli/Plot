@@ -15,8 +15,7 @@ class NNG_Interface {
 		~NNG_Interface();
 		void GetTrajectory(SmartPtr<Trajectory> *trajectory, std::mutex* mtx);
 		const char* url;
-		std::thread thrd_read_msg;
-		std::thread thrd_wait_connection;
+
 
 
 	private:
@@ -37,7 +36,10 @@ class NNG_Interface {
 		bool ConnectionIsSet = false;
 
 
-		bool Debug = true;
+		bool Debug = false;
+
+		std::thread thrd_read_msg;
+		std::thread thrd_wait_connection;
 
 
 
