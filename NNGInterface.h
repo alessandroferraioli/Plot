@@ -13,18 +13,21 @@ class NNG_Interface {
 
 		NNG_Interface(const char * url);
 		~NNG_Interface();
-		void GetTrajectory(SmartPtr<Trajectory> *trajectory, std::mutex* mtx);
+		void GetTrajectory(SmartPtrTrajectories *trajectories, std::mutex* mtx);
 		const char* url;
+		unsigned int index;
 
 
 
 	private:
 
 		void waitConnection();
-		void GetMessage(SmartPtr<Trajectory> trajectory);
+		//void GetMessage(std::shared_ptr<Trajectory> trajectory);
 		Point readMsg();
-		void thrdFunctionGetTrajectory(SmartPtr<Trajectory> *trajectory, std::mutex* mtx);
+		void thrdFunctionGetTrajectory(SmartPtrTrajectories *trajectories, std::mutex* mtx);
 
+		Trajectory *backup_trajectory;
+		bool backupNotEmpty{false};
 
 		nng_socket sock;
 		int rv{};
@@ -34,6 +37,8 @@ class NNG_Interface {
 		Point startPoint{};
 		bool isFirstPoint = true;
 		bool ConnectionIsSet = false;
+
+		static int count_interfaces;
 
 
 		bool Debug = false;

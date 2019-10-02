@@ -14,7 +14,6 @@ GLboolean locked = GL_FALSE;
 int cursorX = 0;
 int cursorY = 0;
 
-int Plot::number_threads{};
 
 
 
@@ -327,11 +326,10 @@ void Plot::InitializeWindowSettings(){
 			glEnable(GL_ALPHA_TEST) ;
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
+void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
 	   //initialize the call backs for event handling
-		printf("Started the nngPlot thread #%d\n",number_threads);
 		InitializeWindowSettings();
-
+		printf("Started the Plot thread \n");
 
 		while (!glfwWindowShouldClose(window))
 	    {
@@ -352,21 +350,22 @@ void Plot::nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colo
 
 			drawOrigin(30.0f,axisWidth);
 
-			Trajectory copied_trajectory;
-    		//if(mtx->try_lock()){
-    			copied_trajectory = **trajectory;
-    			//mtx->unlock();
-			//}
 
-	        //Plotting the dataset
-			copied_trajectory.color = colorPlot;
-			copied_trajectory.width = plotWidth;
-				for (unsigned i=0; i<copied_trajectory.points.size(); i++){
-					//trajectory.at(i).color = getColor(i,trajectory.size());
-					if(Debug)
-						printf("Plotting x: %f , y :%f , z:%f\n",copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
-					drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
-				}
+			for(unsigned j=0; j<trajectory->size();j++){
+				Trajectory copied_trajectory;
+				Color current_color = colorPlot.at(j);
+				copied_trajectory = *(trajectory->at(j));
+				printf("PLOT : Trajectory %d, size %d\n",j,copied_trajectory.points.size());
+
+					for (unsigned i=0; i<copied_trajectory.points.size(); i++){
+						copied_trajectory.color = current_color;
+						copied_trajectory.width = plotWidth;
+						//trajectory.at(i).color = getColor(i,trajectory.size());
+						if(Debug)
+							printf("TRAJECTORY %d x: %f , y :%f , z:%f\n",j,copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
+						drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
+					}
+			}
 
 	        glfwSwapBuffers(window);
 	        glfwPollEvents();
@@ -381,13 +380,10 @@ void Plot::nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colo
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Plot::drawPlotNNG(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
+void Plot::drawPlotNNG(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
 
-	id_threads.push_back(std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx));
-	++number_threads;
-	//thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
+	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
 	//thrd_Plot.join();
-
 
 }
 
@@ -463,8 +459,7 @@ Plot::Plot (int width,int height){
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Plot::~Plot(){
 
-	for(unsigned int i=0;i<id_threads.size();i++)
-		id_threads.at(i).join();
+	thrd_Plot.join();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

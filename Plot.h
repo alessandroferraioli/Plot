@@ -16,6 +16,7 @@
 #include <thread>
 #include <mutex>
 #include <unistd.h>
+#include <memory>
 
 
 
@@ -26,7 +27,6 @@
 #include <nng/protocol/pubsub0/sub.h>
 
 
-#include "SmartPtr.h"
 
 
 #define _USE_MATH_DEFINES // M_PI constant
@@ -61,6 +61,10 @@ typedef struct{
 
 
 
+typedef std::vector<std::shared_ptr<Trajectory>> SmartPtrTrajectories;
+
+
+
 typedef struct{
         int width;
         int height;
@@ -76,14 +80,14 @@ public:
     void drawTrajectories(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
-    void drawPlotNNG(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
+    void drawPlotNNG(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color>  colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
 
     Points readCSV(std::string,float* max_value);
 
 
     GLFWwindow* window;
     Window_params window_params;
-
+    std::thread thrd_Plot;
 
 
 private:
@@ -94,7 +98,7 @@ private:
     void drawLine(Vertex start,Vertex end,float lineWidth);
 
 
-    void nngPlot(SmartPtr<Trajectory> *trajectory,GLfloat axisWidth,Color colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
+    void nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color>  colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
 
     void InitializeWindowSettings();
 
@@ -109,10 +113,7 @@ private:
     int rv{};
 
 
-    std::vector<std::thread> id_threads;
-    std::thread thrd_Plot;
 
-    static int number_threads;
 
 
 

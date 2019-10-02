@@ -7,18 +7,23 @@
 
 int main(void){
 
-	const char* url = "tcp://127.0.0.1:10002";
-	const char* url2 = "tcp://127.0.0.2:10004";
+	const char* url1 = "tcp://127.0.0.1:10002";
+	const char* url2 = "tcp://127.0.0.2:10002";
+	const char* url3 = "tcp://127.0.0.3:10002";
 
 	Color grey{0.5f,0.5f,0.5f,1.0f};
 	Color black{0.0f,0.0f,0.0f,1.0};
 	Color green{0.0,1.0f,0.0f,1.0f};
+	Color red{1.0,0.0f,0.0f,1.0f};
 
-   SmartPtr<Trajectory> shared_trajectory(new Trajectory);
-   SmartPtr<Trajectory> shared_trajectory2(new Trajectory);
-
+	SmartPtrTrajectories trajectories;
+	std::vector<Color>trajectories_color;
 	std::mutex mtx;
-	std::mutex mtx2;
+
+	trajectories_color.push_back(black);
+	trajectories_color.push_back(green);
+	trajectories_color.push_back(red);
+
 
 
 	GLfloat plotWidth = 1.0f;
@@ -28,10 +33,9 @@ int main(void){
 
     Plot plot(1280,720);
 
-    NNG_Interface nng_interface(url);
+    NNG_Interface nng_interface_1(url1);
     NNG_Interface nng_interface_2(url2);
-
-
+    NNG_Interface nng_interface_3(url3);
 
 
  /*   std::vector<Trajectory> trajectories;
@@ -65,13 +69,30 @@ int main(void){
 
      */
 
+    std::shared_ptr<Trajectory> new_trajectory1 =  	std::make_shared<Trajectory>();
+    std::shared_ptr<Trajectory> new_trajectory2 =  	std::make_shared<Trajectory>();
+    std::shared_ptr<Trajectory> new_trajectory3 = 	std::make_shared<Trajectory>();
 
 
-    nng_interface.GetTrajectory(&shared_trajectory, &mtx);
-    nng_interface_2.GetTrajectory(&shared_trajectory2, &mtx2);
 
-    plot.drawPlotNNG(&shared_trajectory,axisWidth,black,plotWidth,grey,&mtx);
-    plot.drawPlotNNG(&shared_trajectory2,axisWidth,black,plotWidth,grey,&mtx2);
+	trajectories.push_back(new_trajectory1);
+    trajectories.push_back(new_trajectory2);
+    trajectories.push_back(new_trajectory3);
+
+    //Point test_point{1.5f,1.4f,1.3f};
+    //trajectories.at(2)->points.push_back(test_point);
+
+
+	//printf("Expected %d trajectories\n",trajectories.size());
+
+
+	nng_interface_1.GetTrajectory(&trajectories, &mtx);
+	nng_interface_2.GetTrajectory(&trajectories, &mtx);
+	nng_interface_3.GetTrajectory(&trajectories, &mtx);
+
+    plot.drawPlotNNG(&trajectories,axisWidth,trajectories_color,plotWidth,grey,&mtx);
+
+
 
 
 }
