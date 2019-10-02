@@ -17,9 +17,12 @@ int main(void){
 	Color red{1.0,0.0f,0.0f,1.0f};
 
 	SmartPtrTrajectories trajectories;
-	std::vector<Color>trajectories_color;
 	std::mutex mtx;
 
+
+
+	//Vector of the colors used in the plot - Default one is black
+	std::vector<Color>trajectories_color;
 	trajectories_color.push_back(black);
 	trajectories_color.push_back(green);
 	trajectories_color.push_back(red);
@@ -34,8 +37,8 @@ int main(void){
     Plot plot(1280,720);
 
     NNG_Interface nng_interface_1(url1);
-    NNG_Interface nng_interface_2(url2);
-    NNG_Interface nng_interface_3(url3);
+   // NNG_Interface nng_interface_2(url2);
+  //  NNG_Interface nng_interface_3(url3);
 
 
  /*   std::vector<Trajectory> trajectories;
@@ -69,26 +72,10 @@ int main(void){
 
      */
 
-    std::shared_ptr<Trajectory> new_trajectory1 =  	std::make_shared<Trajectory>();
-    std::shared_ptr<Trajectory> new_trajectory2 =  	std::make_shared<Trajectory>();
-    std::shared_ptr<Trajectory> new_trajectory3 = 	std::make_shared<Trajectory>();
-
-
-
-	trajectories.push_back(new_trajectory1);
-    trajectories.push_back(new_trajectory2);
-    trajectories.push_back(new_trajectory3);
-
-    //Point test_point{1.5f,1.4f,1.3f};
-    //trajectories.at(2)->points.push_back(test_point);
-
-
-	//printf("Expected %d trajectories\n",trajectories.size());
-
 
 	nng_interface_1.GetTrajectory(&trajectories, &mtx);
-	nng_interface_2.GetTrajectory(&trajectories, &mtx);
-	nng_interface_3.GetTrajectory(&trajectories, &mtx);
+	//nng_interface_2.GetTrajectory(&trajectories, &mtx);
+	//nng_interface_3.GetTrajectory(&trajectories, &mtx);
 
     plot.drawPlotNNG(&trajectories,axisWidth,trajectories_color,plotWidth,grey,&mtx);
 

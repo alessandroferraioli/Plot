@@ -350,17 +350,19 @@ void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vecto
 
 			drawOrigin(30.0f,axisWidth);
 
-
 			for(unsigned j=0; j<trajectory->size();j++){
 				Trajectory copied_trajectory;
-				Color current_color = colorPlot.at(j);
+				Color current_color;
+				if(j<colorPlot.size())
+					current_color = colorPlot.at(j);
+				else
+					current_color = {0.0f,0.0f,0.0f,1.0f};
 				copied_trajectory = *(trajectory->at(j));
-				printf("PLOT : Trajectory %d, size %d\n",j,copied_trajectory.points.size());
+				//printf("PLOT : Trajectory %d, size %d\n",j,copied_trajectory.points.size());
 
 					for (unsigned i=0; i<copied_trajectory.points.size(); i++){
 						copied_trajectory.color = current_color;
 						copied_trajectory.width = plotWidth;
-						//trajectory.at(i).color = getColor(i,trajectory.size());
 						if(Debug)
 							printf("TRAJECTORY %d x: %f , y :%f , z:%f\n",j,copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
 						drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
