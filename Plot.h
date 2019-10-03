@@ -113,23 +113,13 @@ private:
     int rv{};
 
 
-
-
-
-
-/*
-
-    GLfloat alpha{};
-    GLfloat beta{};
-    GLfloat zoom{};
-
+    GLfloat alpha{210.0f};
+    GLfloat beta{-70.0f};
+    GLfloat zoom{10.0f};
     GLboolean locked = GL_FALSE;
-
-
     int cursorX = 0;
     int cursorY = 0;
 
-    std::mutex mtx; */
 
 };
 

@@ -14,7 +14,6 @@ Point NNG_Interface::readMsg(){
 
     Point new_point;
 
-
     if ((rv = nng_recv(sock, &buf, &sz, NNG_FLAG_ALLOC)) != 0) {
             fatal("nng_recv", rv);
     }
@@ -84,6 +83,8 @@ void NNG_Interface::thrdFunctionGetTrajectory(SmartPtrTrajectories *trajectory, 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void NNG_Interface::GetTrajectory(SmartPtrTrajectories* trajectory, std::mutex* mtx){
+	std::shared_ptr<Trajectory> memory_allocation = std::make_shared<Trajectory>();
+	trajectory->push_back(memory_allocation);
 	thrd_read_msg = std::thread(&NNG_Interface::thrdFunctionGetTrajectory,this,trajectory,mtx);
 
 }

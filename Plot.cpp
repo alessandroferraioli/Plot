@@ -4,20 +4,6 @@ using namespace json11;
 
 
 
-//TODO REMOVE THIS STUFF
-GLfloat alpha{210.0f};
-GLfloat beta{-70.0f};
-GLfloat zoom{10.0f};
-
-GLboolean locked = GL_FALSE;
-
-int cursorX = 0;
-int cursorY = 0;
-
-
-
-
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void fatal(const char *func, int rv)
 {
@@ -56,17 +42,21 @@ void Plot::drawLine(Vertex start,Vertex end,float lineWidth){
 //========================================================================
 void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+
+
+	Plot *instance =(Plot*)glfwGetWindowUserPointer(window);
+
     if (button != GLFW_MOUSE_BUTTON_LEFT)
         return;
 
     if (action == GLFW_PRESS)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        locked = GL_TRUE;
+        instance->locked = GL_TRUE;
     }
     else
     {
-    	locked = GL_FALSE;
+    	instance->locked = GL_FALSE;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }
@@ -77,14 +67,17 @@ void Plot::mouse_button_callback(GLFWwindow* window, int button, int action, int
 void Plot::cursor_position_callback(GLFWwindow* window, double x, double y)
 {
     //if the mouse button is pressed
-    if (locked)
+
+	Plot *instance =(Plot*)glfwGetWindowUserPointer(window);
+
+    if (instance->locked)
     {
-    	alpha += (GLfloat) (x - cursorX) / 10.0f;
-    	beta += (GLfloat) (y - cursorY) / 10.0f;
+    	instance->alpha += (GLfloat) (x - instance->cursorX) / 10.0f;
+    	instance->beta += (GLfloat) (y - instance->cursorY) / 10.0f;
     }
     //update the cursor position
-    cursorX = (int) x;
-    cursorY = (int) y;
+    instance->cursorX = (int) x;
+    instance->cursorY = (int) y;
 }
 
 //========================================================================
@@ -92,9 +85,12 @@ void Plot::cursor_position_callback(GLFWwindow* window, double x, double y)
 //========================================================================
 void Plot::scroll_callback(GLFWwindow* window, double x, double y)
 {
-	zoom += (float) y / 2.0f;
-    if (zoom < 0.0f)
-    	zoom = 0.0f;
+
+	Plot *instance =(Plot*)glfwGetWindowUserPointer(window);
+
+	instance->zoom += (float) y / 2.0f;
+    if (instance->zoom < 0.0f)
+    	instance->zoom = 0.0f;
 }
 
 //========================================================================
@@ -454,6 +450,9 @@ Plot::Plot (int width,int height){
     	printf("Cannot initialize the window\n");
         exit(EXIT_FAILURE);
     }
+
+    glfwSetWindowUserPointer(window, this);
+
 
 
 

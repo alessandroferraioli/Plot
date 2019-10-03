@@ -38,7 +38,7 @@ int main(void){
 
     NNG_Interface nng_interface_1(url1);
    // NNG_Interface nng_interface_2(url2);
-  //  NNG_Interface nng_interface_3(url3);
+   // NNG_Interface nng_interface_3(url3);
 
 
  /*   std::vector<Trajectory> trajectories;
