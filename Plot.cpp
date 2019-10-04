@@ -22,13 +22,25 @@ void Plot::drawPoint(Point p,Color color, GLfloat size){
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Plot::drawLine(Point start,Point end,float lineWidth , Color color){
+
+	glLineWidth(lineWidth);
+	glBegin(GL_LINES);
+	glColor4f(color.r, color.g,color.b, color.a);
+	glVertex3f(start.x, start.y, start.z);
+	glVertex3f(end.x, end.y, end.z);
+	glEnd();
+
+}
+
+
+
 void Plot::drawLine(Vertex start,Vertex end,float lineWidth){
 
 	glLineWidth(lineWidth);
 	glBegin(GL_LINES);
 	glColor4f(start.color.r, start.color.g,start.color.b, start.color.a);
 	glVertex3f(start.point.x, start.point.y, start.point.z);
-	glColor4f(end.color.r, end.color.g,end.color.b, end.color.a);
 	glVertex3f(end.point.x, end.point.y, end.point.z);
 	glEnd();
 
@@ -356,12 +368,21 @@ void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vecto
 				copied_trajectory = *(trajectory->at(j));
 				//printf("PLOT : Trajectory %d, size %d\n",j,copied_trajectory.points.size());
 
-					for (unsigned i=0; i<copied_trajectory.points.size(); i++){
+					for (unsigned i=0; i<copied_trajectory.points.size()-1; i++){
 						copied_trajectory.color = current_color;
 						copied_trajectory.width = plotWidth;
 						if(Debug)
 							printf("TRAJECTORY %d x: %f , y :%f , z:%f\n",j,copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
-						drawPoint(copied_trajectory.points.at(i),copied_trajectory.color,copied_trajectory.width);
+						if(this->mode == "line")
+							drawLine(	copied_trajectory.points.at(i),
+										copied_trajectory.points.at(i+1),
+										copied_trajectory.width,
+										copied_trajectory.color);
+
+						if(this->mode == "point")
+							drawPoint(	copied_trajectory.points.at(i),
+										copied_trajectory.color,
+										copied_trajectory.width);
 					}
 			}
 
@@ -378,8 +399,8 @@ void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vecto
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Plot::drawPlotNNG(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx){
-
+void Plot::drawPlotNNG(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx ,std::string mode){
+	this->mode = mode;
 	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
 	//thrd_Plot.join();
 

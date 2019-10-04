@@ -37,8 +37,8 @@ int main(void){
     Plot plot(1280,720);
 
     NNG_Interface nng_interface_1(url1);
-   // NNG_Interface nng_interface_2(url2);
-   // NNG_Interface nng_interface_3(url3);
+    NNG_Interface nng_interface_2(url2);
+   NNG_Interface nng_interface_3(url3);
 
 
  /*   std::vector<Trajectory> trajectories;
@@ -68,16 +68,15 @@ int main(void){
     trajectories.push_back(trajectory0);
     trajectories.push_back(trajectory1);
 
-    plot.drawTrajectories(trajectories,axisWidth,plotWidth,max_value,background,colors);
-
+    plot.drawTrajectories(trajectories,axisWidth,plotWidth,max_value,background,colors);2
      */
 
 
 	nng_interface_1.GetTrajectory(&trajectories, &mtx);
-	//nng_interface_2.GetTrajectory(&trajectories, &mtx);
-	//nng_interface_3.GetTrajectory(&trajectories, &mtx);
+	nng_interface_2.GetTrajectory(&trajectories, &mtx);
+	nng_interface_3.GetTrajectory(&trajectories, &mtx);
 
-    plot.drawPlotNNG(&trajectories,axisWidth,trajectories_color,plotWidth,grey,&mtx);
+    plot.drawPlotNNG(&trajectories,axisWidth,trajectories_color,plotWidth,grey,&mtx,"line");
 
 
 

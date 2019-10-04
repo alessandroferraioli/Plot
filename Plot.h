@@ -80,7 +80,15 @@ public:
     void drawTrajectories(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
     				float max_value,Color backgroundColor,std::vector<Color>);
 
-    void drawPlotNNG(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color>  colorPlot, GLfloat plotWidth,Color backgroundColor, std::mutex* mtx);
+    void drawPlotNNG(	SmartPtrTrajectories *trajectory,
+    					GLfloat axisWidth,
+						std::vector<Color>  colorPlot,
+						GLfloat plotWidth,Color backgroundColor,
+						std::mutex* mtx,
+						std::string mode);
+
+
+
 
     Points readCSV(std::string,float* max_value);
 
@@ -95,7 +103,9 @@ private:
     void drawPoint(Point vp,Color color, GLfloat size);
     void drawFloor(float max_value);
     void drawOrigin(float max_value,GLfloat axisThickness);
+
     void drawLine(Vertex start,Vertex end,float lineWidth);
+    void drawLine(Point start,Point end,float lineWidth , Color color);
 
 
     void nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color>  colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
@@ -119,7 +129,7 @@ private:
     GLboolean locked = GL_FALSE;
     int cursorX = 0;
     int cursorY = 0;
-
+    std::string mode{};
 
 };
 
