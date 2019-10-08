@@ -39,6 +39,10 @@ typedef struct{
     GLfloat r, g, b, a;
 }Color;
 
+
+
+
+
 typedef struct{
 	GLfloat  x, y, z;
 }Point;
@@ -46,7 +50,7 @@ typedef struct{
 
 typedef struct{
 	Point point;
-	Color color{1.0f,1.0f,1.0f,1.0f}; //TODO: Associa il colore alla traiettoria anziché al punto
+	Color color{1.0f,1.0f,1.0f,1.0f};
 }Vertex;
 
 //typedef std::vector<Vertex> Trajectory;
@@ -69,33 +73,32 @@ typedef struct{
         int width;
         int height;
 }Window_params;
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 class Plot{
 
 public:
+
     Plot(int width, int height);
     ~Plot();
-
-    void drawTrajectories(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
-    				float max_value,Color backgroundColor,std::vector<Color>);
 
     void drawPlotNNG(	SmartPtrTrajectories *trajectory,
     					GLfloat axisWidth,
 						std::vector<Color>  colorPlot,
 						GLfloat plotWidth,Color backgroundColor,
-						std::mutex* mtx,
 						std::string mode);
 
 
 
-
+    void drawTrajectories(std::vector<Trajectory> trajectory,GLfloat axisWidth,GLfloat plotWidth,
+    				float max_value,Color backgroundColor,std::vector<Color>);
     Points readCSV(std::string,float* max_value);
 
 
     GLFWwindow* window;
     Window_params window_params;
-    std::thread thrd_Plot;
+    std::string mode{};
 
 
 private:
@@ -103,12 +106,16 @@ private:
     void drawPoint(Point vp,Color color, GLfloat size);
     void drawFloor(float max_value);
     void drawOrigin(float max_value,GLfloat axisThickness);
+    void drawPlot(SmartPtrTrajectories *trajectory, std::vector<Color> colorPlot,GLfloat plotWidth );
+
+
 
     void drawLine(Vertex start,Vertex end,float lineWidth);
     void drawLine(Point start,Point end,float lineWidth , Color color);
+    Color checkColor(std::vector<Color> colorPlot,unsigned int index );
 
 
-    void nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color>  colorPlot,GLfloat plotWidth,Color backgroundColor,std::mutex *mtx);
+    void nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color backgroundColor);
 
     void InitializeWindowSettings();
 
@@ -129,7 +136,7 @@ private:
     GLboolean locked = GL_FALSE;
     int cursorX = 0;
     int cursorY = 0;
-    std::string mode{};
+    std::thread thrd_Plot;
 
 };
 

@@ -333,9 +333,54 @@ void Plot::InitializeWindowSettings(){
 
 			glEnable(GL_ALPHA_TEST) ;
 }
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color background,std::mutex *mtx){
+
+Color Plot::checkColor(std::vector<Color> colorPlot,unsigned int index ){
+	Color current_color;
+
+	//set default color
+	if(index<colorPlot.size())
+		current_color = colorPlot.at(index);
+	else
+		current_color = {0.0f,0.0f,0.0f,1.0f};
+
+	return current_color;
+}
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void Plot::drawPlot(SmartPtrTrajectories *trajectory, std::vector<Color> colorPlot,GLfloat plotWidth) {
+	Color current_color;
+	for(unsigned int j=0; j<trajectory->size();j++){
+		Trajectory copied_trajectory;
+		current_color =checkColor(colorPlot, j);
+		copied_trajectory = *(trajectory->at(j));
+		//printf("PLOT : Trajectory %d, size %d\n",j,copied_trajectory.points.size());
+			for (unsigned i=0; i<copied_trajectory.points.size()-1; i++){
+				copied_trajectory.color = current_color;
+				copied_trajectory.width = plotWidth;
+				if(Debug)
+					printf("TRAJECTORY %d x: %f , y :%f , z:%f\n",j,copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
+				if(this->mode == "line")
+					drawLine(	copied_trajectory.points.at(i),
+								copied_trajectory.points.at(i+1),
+								copied_trajectory.width,
+								copied_trajectory.color);
+
+				if(this->mode == "point")
+					drawPoint(	copied_trajectory.points.at(i),
+								copied_trajectory.color,
+								copied_trajectory.width);
+			}
+	}
+}
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void Plot::nngPlot(	SmartPtrTrajectories *trajectory,GLfloat axisWidth,
+					std::vector<Color> colorPlot,GLfloat plotWidth,Color background){
 	   //initialize the call backs for event handling
+
+		GLfloat max_value = 35.0f;
+
 		InitializeWindowSettings();
 		printf("Started the Plot thread \n");
 
@@ -343,6 +388,7 @@ void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vecto
 	    {
 	        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	        glClearColor(background.r, background.g, background.b, background.a);
+
 	        //draw the scene
 
 	        //switch to model view so the transformation applies to entire model
@@ -354,58 +400,25 @@ void Plot::nngPlot(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vecto
 	        glRotatef(beta, 1.0, 0.0, 0.0);
 	        // rotate alpha degrees around the z-axis
 	        glRotatef(alpha, 0.0, 0.0, 1.0);
-			drawFloor(30.0f);
 
-			drawOrigin(30.0f,axisWidth);
-
-			for(unsigned j=0; j<trajectory->size();j++){
-				Trajectory copied_trajectory;
-				Color current_color;
-				if(j<colorPlot.size())
-					current_color = colorPlot.at(j);
-				else
-					current_color = {0.0f,0.0f,0.0f,1.0f};
-				copied_trajectory = *(trajectory->at(j));
-				//printf("PLOT : Trajectory %d, size %d\n",j,copied_trajectory.points.size());
-
-					for (unsigned i=0; i<copied_trajectory.points.size()-1; i++){
-						copied_trajectory.color = current_color;
-						copied_trajectory.width = plotWidth;
-						if(Debug)
-							printf("TRAJECTORY %d x: %f , y :%f , z:%f\n",j,copied_trajectory.points.at(i).x,copied_trajectory.points.at(i).y,copied_trajectory.points.at(i).z);
-						if(this->mode == "line")
-							drawLine(	copied_trajectory.points.at(i),
-										copied_trajectory.points.at(i+1),
-										copied_trajectory.width,
-										copied_trajectory.color);
-
-						if(this->mode == "point")
-							drawPoint(	copied_trajectory.points.at(i),
-										copied_trajectory.color,
-										copied_trajectory.width);
-					}
-			}
+			drawFloor(max_value);
+			drawOrigin(max_value,axisWidth);
+			drawPlot(trajectory, colorPlot, plotWidth);
 
 	        glfwSwapBuffers(window);
 	        glfwPollEvents();
 	    }
 
-		glfwDestroyWindow(window);
-		glfwTerminate();
-
-
 
 }
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Plot::drawPlotNNG(SmartPtrTrajectories *trajectory,GLfloat axisWidth,std::vector<Color> colorPlot,GLfloat plotWidth,Color backgroundColor, std::mutex* mtx ,std::string mode){
+void Plot::drawPlotNNG(	SmartPtrTrajectories *trajectory,GLfloat axisWidth,
+						std::vector<Color> colorPlot,GLfloat plotWidth,Color backgroundColor,std::string mode){
 	this->mode = mode;
-	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor,mtx);
-	//thrd_Plot.join();
+	thrd_Plot = std::thread(&Plot::nngPlot,this,trajectory,axisWidth,colorPlot,plotWidth, backgroundColor);
 
 }
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void Plot::drawTrajectories(std::vector<Trajectory> trajectories,GLfloat axisWidth,GLfloat plotWidth,float max_value,
@@ -449,7 +462,6 @@ void Plot::drawTrajectories(std::vector<Trajectory> trajectories,GLfloat axisWid
     glfwDestroyWindow(window);
     glfwTerminate();
 }
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Plot::Plot (int width,int height){
 
@@ -473,16 +485,11 @@ Plot::Plot (int width,int height){
     }
 
     glfwSetWindowUserPointer(window, this);
-
-
-
-
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Plot::~Plot(){
 
 	thrd_Plot.join();
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 

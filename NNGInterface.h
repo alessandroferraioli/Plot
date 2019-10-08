@@ -1,14 +1,20 @@
 #include <nng/nng.h>
 #include <nng/protocol/pubsub0/pub.h>
 #include <nng/protocol/pubsub0/sub.h>
-#include <json11.hpp>
 #include "Plot.h"
+#include <time.h>
+
+#include <cstdlib>
+#include <iostream>
+#include<cstring>
 
 #ifndef NNGINTERFACE_H_
 #define NNGINTERFACE_H_
 
 
 class NNG_Interface {
+
+
 	public:
 
 		NNG_Interface(const char * url);
