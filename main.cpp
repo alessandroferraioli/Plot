@@ -29,11 +29,14 @@ int main(void){
 	trajectories_color.push_back(Red);
 
 
+
+
 	GLfloat plotWidth = 5.0f;
 	GLfloat axisWidth = 2.0f;
 
 
     Plot plot(1280,720);
+	//test visual code git control
 
     NNG_Interface nng_interface_1(url1);
   //  NNG_Interface nng_interface_2(url2);
